@@ -4,3 +4,4 @@ packages:
   - "examples"
   - "evals"
   - "docs"
+  - "cf-worker"
