@@ -103,24 +103,26 @@ export class StagehandContext {
     const instance = new StagehandContext(context, stagehand);
     context.on("page", async (pwPage) => {
       await instance.handleNewPlaywrightPage(pwPage);
-      instance
-        .attachFrameNavigatedListener(pwPage)
-        .catch((err) =>
-          stagehand.logger({
-            category: "cdp",
-            message: `Failed to attach frameNavigated listener: ${err}`,
-            level: 0,
-          }),
-        )
-        .finally(() =>
-          instance.handleNewPlaywrightPage(pwPage).catch((err) =>
+      if (stagehand.env !== "CLOUDFLARE") {
+        instance
+          .attachFrameNavigatedListener(pwPage)
+          .catch((err) =>
             stagehand.logger({
-              category: "context",
-              message: `Failed to initialise new page: ${err}`,
+              category: "cdp",
+              message: `Failed to attach frameNavigated listener: ${err}`,
               level: 0,
             }),
-          ),
-        );
+          )
+          .finally(() =>
+            instance.handleNewPlaywrightPage(pwPage).catch((err) =>
+              stagehand.logger({
+                category: "context",
+                message: `Failed to initialise new page: ${err}`,
+                level: 0,
+              }),
+            ),
+          );
+      }
     });
 
     // Initialize existing pages
@@ -140,7 +142,9 @@ export class StagehandContext {
         }
         throw err;
       }
-      await instance.attachFrameNavigatedListener(page);
+      if (stagehand.env !== "CLOUDFLARE") {
+        await instance.attachFrameNavigatedListener(page);
+      }
       // Set the first page as active
       if (!instance.activeStagehandPage && stagehandPage) {
         instance.setActivePage(stagehandPage);

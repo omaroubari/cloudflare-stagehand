@@ -8,7 +8,11 @@ import path from "path";
 import { Browser, chromium } from "playwright";
 import { z } from "zod/v3";
 import { AgentExecuteOptions, AgentResult } from "../types/agent";
-import { BrowserResult } from "../types/browser";
+import {
+  BrowserResult,
+  StagehandBrowserProvider,
+  StagehandEnv,
+} from "../types/browser";
 import { EnhancedContext } from "../types/context";
 import { LogLine } from "../types/log";
 import { AvailableModel, ClientOptions } from "../types/model";
@@ -46,7 +50,7 @@ import { StagehandLogger } from "./logger";
 import { connectToMCPServer } from "./mcp/connection";
 import { resolveTools } from "./mcp/utils";
 import { applyDefaultBrowserSettingsViewport } from "./browserbaseDefaults";
-import { isRunningInBun, loadApiKeyFromEnv } from "./utils";
+import { isRunningInBun, isTargetGoneError, loadApiKeyFromEnv } from "./utils";
 
 dotenv.config({ path: ".env" });
 
@@ -68,17 +72,17 @@ const defaultLogger = async (logLine: LogLine, disablePino?: boolean) => {
   globalLogger.log(logLine);
 };
 
-async function getBrowser(
-  apiKey: string | undefined,
-  projectId: string | undefined,
-  env: "LOCAL" | "BROWSERBASE" = "LOCAL",
-  headless: boolean = false,
-  logger: (message: LogLine) => void,
-  browserbaseSessionCreateParams?: ConstructorParams["browserbaseSessionCreateParams"],
-  browserbaseSessionID?: string,
-  localBrowserLaunchOptions?: LocalBrowserLaunchOptions,
-): Promise<BrowserResult> {
-  if (env === "BROWSERBASE") {
+export class BrowserbaseProvider implements StagehandBrowserProvider {
+  constructor(
+    private apiKey: string | undefined,
+    private projectId: string | undefined,
+    private logger: (message: LogLine) => void,
+    private browserbaseSessionCreateParams?: ConstructorParams["browserbaseSessionCreateParams"],
+    private browserbaseSessionID?: string,
+  ) {}
+
+  async getBrowser(): Promise<BrowserResult> {
+    const { apiKey, projectId, logger } = this;
     if (!apiKey) {
       throw new MissingEnvironmentVariableError(
         "BROWSERBASE_API_KEY",
@@ -101,19 +105,20 @@ async function getBrowser(
       apiKey,
     });
 
-    if (browserbaseSessionID) {
+    if (this.browserbaseSessionID) {
       // Validate the session status
       try {
-        const session =
-          await browserbase.sessions.retrieve(browserbaseSessionID);
+        const session = await browserbase.sessions.retrieve(
+          this.browserbaseSessionID,
+        );
 
         if (session.status !== "RUNNING") {
           throw new StagehandError(
-            `Session ${browserbaseSessionID} is not running (status: ${session.status})`,
+            `Session ${this.browserbaseSessionID} is not running (status: ${session.status})`,
           );
         }
 
-        sessionId = browserbaseSessionID;
+        sessionId = this.browserbaseSessionID;
         connectUrl = session.connectUrl;
 
         logger({
@@ -160,7 +165,7 @@ async function getBrowser(
       }
 
       const sessionCreateParams = applyDefaultBrowserSettingsViewport(
-        browserbaseSessionCreateParams,
+        this.browserbaseSessionCreateParams,
       );
       const session = await browserbase.sessions.create({
         projectId,
@@ -208,7 +213,7 @@ async function getBrowser(
 
     logger({
       category: "init",
-      message: browserbaseSessionID
+      message: this.browserbaseSessionID
         ? "browserbase session resumed"
         : "browserbase session started",
       auxiliary: {
@@ -227,10 +232,28 @@ async function getBrowser(
       },
     });
 
-    const context = browser.contexts()[0];
+    const context = browser.contexts()[0] ?? (await browser.newContext());
 
-    return { browser, context, debugUrl, sessionUrl, sessionId, env };
-  } else {
+    return {
+      browser,
+      context,
+      debugUrl,
+      sessionUrl,
+      sessionId,
+      env: "BROWSERBASE",
+    };
+  }
+}
+
+export class LocalPlaywrightProvider implements StagehandBrowserProvider {
+  constructor(
+    private logger: (message: LogLine) => void,
+    private headless: boolean = false,
+    private localBrowserLaunchOptions?: LocalBrowserLaunchOptions,
+  ) {}
+
+  async getBrowser(): Promise<BrowserResult> {
+    const { localBrowserLaunchOptions, logger, headless } = this;
     if (localBrowserLaunchOptions?.cdpUrl) {
       if (!localBrowserLaunchOptions.cdpUrl.includes("connect.connect")) {
         logger({
@@ -249,7 +272,7 @@ async function getBrowser(
       const browser = await chromium.connectOverCDP(
         localBrowserLaunchOptions.cdpUrl,
       );
-      const context = browser.contexts()[0];
+      const context = browser.contexts()[0] ?? (await browser.newContext());
       return { browser, context, env: "LOCAL" };
     }
 
@@ -332,6 +355,78 @@ async function getBrowser(
   }
 }
 
+export class CloudflareBrowserProvider implements StagehandBrowserProvider {
+  private browser?: Browser;
+
+  constructor(
+    private browserBinding: unknown = typeof process !== "undefined"
+      ? process.env.BROWSER
+      : undefined,
+    private launchBrowser?: (
+      binding: unknown,
+      options?: unknown,
+    ) => Promise<unknown>,
+  ) {}
+
+  async getBrowser(): Promise<BrowserResult> {
+    if (!this.browserBinding) {
+      throw new MissingEnvironmentVariableError("BROWSER", "Cloudflare");
+    }
+
+    const launchBrowser = this.launchBrowser;
+    if (!launchBrowser) {
+      throw new StagehandError(
+        "CloudflareBrowserProvider requires the @cloudflare/playwright launch function.",
+      );
+    }
+
+    const browser = (await launchBrowser(this.browserBinding, {
+      keep_alive: 60_000,
+    })) as Browser;
+    const context = await browser.newContext();
+    this.browser = browser;
+    return { browser, context, env: "CLOUDFLARE" };
+  }
+
+  async close(): Promise<void> {
+    if (!this.browser) return;
+    try {
+      await this.browser.close();
+    } catch (error) {
+      if (!isTargetGoneError(error)) throw error;
+    }
+  }
+}
+
+function defaultBrowserProviderForEnv(
+  apiKey: string | undefined,
+  projectId: string | undefined,
+  env: StagehandEnv = "LOCAL",
+  headless: boolean = false,
+  logger: (message: LogLine) => void,
+  browserbaseSessionCreateParams?: ConstructorParams["browserbaseSessionCreateParams"],
+  browserbaseSessionID?: string,
+  localBrowserLaunchOptions?: LocalBrowserLaunchOptions,
+): StagehandBrowserProvider {
+  if (env === "BROWSERBASE") {
+    return new BrowserbaseProvider(
+      apiKey,
+      projectId,
+      logger,
+      browserbaseSessionCreateParams,
+      browserbaseSessionID,
+    );
+  }
+  if (env === "CLOUDFLARE") {
+    return new CloudflareBrowserProvider();
+  }
+  return new LocalPlaywrightProvider(
+    logger,
+    headless,
+    localBrowserLaunchOptions,
+  );
+}
+
 async function applyStealthScripts(context: BrowserContext) {
   await context.addInitScript(() => {
     // Override the navigator.webdriver property
@@ -399,8 +494,9 @@ export class Stagehand {
   private stagehandLogger: StagehandLogger;
   private disablePino: boolean;
   protected modelClientOptions: ClientOptions;
-  private _env: "LOCAL" | "BROWSERBASE";
+  private _env: StagehandEnv;
   private _browser: Browser | undefined;
+  private browserProvider?: StagehandBrowserProvider;
   private _isClosed: boolean = false;
   private _history: Array<HistoryEntry> = [];
   public readonly experimental: boolean;
@@ -533,6 +629,7 @@ export class Stagehand {
       systemPrompt,
       useAPI = true,
       localBrowserLaunchOptions,
+      browserProvider,
       waitForCaptchaSolves = false,
       logInferenceToFile = false,
       selfHeal = false,
@@ -650,7 +747,7 @@ export class Stagehand {
     this.browserbaseSessionID = browserbaseSessionID;
     this.userProvidedInstructions = systemPrompt;
 
-    if (this.usingAPI && env === "LOCAL") {
+    if (this.usingAPI && env !== "BROWSERBASE") {
       // Make env supersede useAPI
       this.usingAPI = false;
     } else if (
@@ -665,6 +762,10 @@ export class Stagehand {
     }
     this.waitForCaptchaSolves = waitForCaptchaSolves;
     this.localBrowserLaunchOptions = localBrowserLaunchOptions;
+    this.browserProvider =
+      typeof browserProvider === "function"
+        ? { getBrowser: browserProvider }
+        : browserProvider;
 
     if (this.usingAPI) {
       this.registerSignalHandlers();
@@ -711,7 +812,7 @@ export class Stagehand {
     };
   }
 
-  public get env(): "LOCAL" | "BROWSERBASE" {
+  public get env(): StagehandEnv {
     if (this._env === "BROWSERBASE") {
       if (!this.apiKey) {
         throw new MissingEnvironmentVariableError(
@@ -724,14 +825,12 @@ export class Stagehand {
           "Browserbase",
         );
       }
-      return "BROWSERBASE";
-    } else {
-      return "LOCAL";
     }
+    return this._env;
   }
 
   public get downloadsPath(): string {
-    return this.env === "BROWSERBASE"
+    return this.env !== "LOCAL"
       ? "downloads"
       : (this.localBrowserLaunchOptions?.downloadsPath ??
           path.resolve(process.cwd(), "downloads"));
@@ -780,8 +879,9 @@ export class Stagehand {
       this.browserbaseSessionID = sessionId;
     }
 
-    const { browser, context, debugUrl, sessionUrl, contextPath, sessionId } =
-      await getBrowser(
+    const browserProvider =
+      this.browserProvider ??
+      defaultBrowserProviderForEnv(
         this.apiKey,
         this.projectId,
         this.env,
@@ -790,17 +890,23 @@ export class Stagehand {
         this.browserbaseSessionCreateParams,
         this.browserbaseSessionID,
         this.localBrowserLaunchOptions,
-      ).catch((e) => {
-        this.stagehandLogger.error("Error in init:", { error: String(e) });
-        const br: BrowserResult = {
-          context: undefined,
-          debugUrl: undefined,
-          sessionUrl: undefined,
-          sessionId: undefined,
-          env: this.env,
-        };
-        return br;
-      });
+      );
+    this.browserProvider = browserProvider;
+
+    const {
+      browser,
+      context,
+      page,
+      debugUrl,
+      sessionUrl,
+      contextPath,
+      sessionId,
+      env,
+    } = await browserProvider.getBrowser().catch((e) => {
+      this.stagehandLogger.error("Error in init:", { error: String(e) });
+      throw e;
+    });
+    this._env = env ?? this._env;
     this.contextPath = contextPath;
     this._browser = browser;
     if (!context) {
@@ -815,7 +921,19 @@ export class Stagehand {
     }
     this.stagehandContext = await StagehandContext.init(context, this);
 
-    const defaultPage = (await this.stagehandContext.getStagehandPages())[0];
+    let defaultPage = page
+      ? await this.stagehandContext.getStagehandPage(page)
+      : (await this.stagehandContext.getStagehandPages())[0];
+
+    if (!defaultPage) {
+      await this.stagehandContext.context.newPage();
+      defaultPage = this.stagehandContext.getActivePage();
+    }
+
+    if (!defaultPage) {
+      throw new StagehandInitError("Failed to initialize a browser page");
+    }
+
     this.stagehandPage = defaultPage;
 
     if (this.headless) {
@@ -832,12 +950,14 @@ export class Stagehand {
       content: guardedScript,
     });
 
-    const session = await this.context.newCDPSession(this.page);
-    await session.send("Browser.setDownloadBehavior", {
-      behavior: "allow",
-      downloadPath: this.downloadsPath,
-      eventsEnabled: true,
-    });
+    if (this.env !== "CLOUDFLARE") {
+      const session = await this.context.newCDPSession(this.page);
+      await session.send("Browser.setDownloadBehavior", {
+        behavior: "allow",
+        downloadPath: this.downloadsPath,
+        eventsEnabled: true,
+      });
+    }
 
     this.browserbaseSessionID = sessionId;
 
@@ -871,8 +991,12 @@ export class Stagehand {
       this.apiClient = null;
       return;
     } else {
-      await this.context.close();
-      if (this._browser) {
+      if (this.browserProvider?.close) {
+        await this.browserProvider.close();
+      } else {
+        await this.context.close();
+      }
+      if (this._browser && !this.browserProvider?.close) {
         await this._browser.close();
       }
     }

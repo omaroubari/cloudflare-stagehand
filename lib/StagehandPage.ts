@@ -498,12 +498,17 @@ export class StagehandPage {
         },
       };
 
-      const session = await this.getCDPClient(this.rawPage);
-      await session.send("Page.enable");
+      if (this.stagehand.env === "CLOUDFLARE") {
+        this.updateRootFrameId("main");
+        this.intContext.registerFrameId("main", this);
+      } else {
+        const session = await this.getCDPClient(this.rawPage);
+        await session.send("Page.enable");
 
-      const rootId = await getCurrentRootFrameId(session);
-      this.updateRootFrameId(rootId);
-      this.intContext.registerFrameId(rootId, this);
+        const rootId = await getCurrentRootFrameId(session);
+        this.updateRootFrameId(rootId);
+        this.intContext.registerFrameId(rootId, this);
+      }
 
       this.intPage = new Proxy(page, handler) as unknown as Page;
 
@@ -561,6 +566,11 @@ export class StagehandPage {
    *                    `this.stagehand.domSettleTimeoutMs`.
    */
   public async _waitForSettledDom(timeoutMs?: number): Promise<void> {
+    if (this.stagehand.env === "CLOUDFLARE") {
+      await this.page.waitForLoadState("domcontentloaded").catch(() => {});
+      return;
+    }
+
     const timeout = timeoutMs ?? this.stagehand.domSettleTimeoutMs;
     const client = await this.getCDPClient();
 

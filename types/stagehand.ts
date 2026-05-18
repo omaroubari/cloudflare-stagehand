@@ -6,6 +6,7 @@ import { z } from "zod/v3";
 import { LLMClient } from "../lib/llm/LLMClient";
 import { LLMProvider } from "../lib/llm/LLMProvider";
 import { AgentProviderType } from "./agent";
+import { StagehandBrowserProvider, StagehandEnv } from "./browser";
 import { LogLine } from "./log";
 import { AvailableModel, ClientOptions } from "./model";
 
@@ -13,7 +14,18 @@ export interface ConstructorParams {
   /**
    * The environment to use for Stagehand
    */
-  env: "LOCAL" | "BROWSERBASE";
+  env: StagehandEnv;
+  /**
+   * Supplies the browser/context/page Stagehand should use.
+   */
+  browserProvider?:
+    | StagehandBrowserProvider
+    | (() => Promise<{
+        browser?: import("./page").Browser;
+        context: import("./page").BrowserContext;
+        page?: import("playwright").Page;
+        env: StagehandEnv;
+      }>);
   /**
    * Your Browserbase API key
    */

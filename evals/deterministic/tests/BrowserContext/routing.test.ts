@@ -148,10 +148,10 @@ test.describe("StagehandContext - Routing APIs with dynamic setup", () => {
     const page = await context.newPage();
     await page.goto(baseURL);
 
-    const fetchResult = await page.evaluate(async () => {
+    const fetchResult = (await page.evaluate(async () => {
       const res = await fetch("/example.json");
       return res.json();
-    });
+    })) as { mockedData: number };
     // We should get the mocked data from our route, not the real 'server-data'
     expect(fetchResult.mockedData).toBe(1234);
 
@@ -197,10 +197,10 @@ test.describe("StagehandContext - Routing APIs with dynamic setup", () => {
 
     // 6. confirm the WebSocket route is still active
     // do a second fetch -> This time it won't be mocked
-    const fetchResult2 = await page.evaluate(async () => {
+    const fetchResult2 = (await page.evaluate(async () => {
       const res = await fetch("/example.json");
       return res.json();
-    });
+    })) as { original: string };
     // The real server returns { original: "server-data" }
     expect(fetchResult2.original).toBe("server-data");
 
