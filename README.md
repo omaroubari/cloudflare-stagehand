@@ -53,7 +53,7 @@ In a Cloudflare Worker, create a `CloudflareBrowserProvider` with the Worker `BR
 
 ```ts
 import { launch } from "@cloudflare/playwright";
-import { CloudflareBrowserProvider, Stagehand } from "@browserbasehq/stagehand";
+import { CloudflareBrowserProvider, Stagehand } from "cloudflare-stagehand";
 
 export default {
   async fetch(request: Request, env: Env) {
