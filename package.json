@@ -1,6 +1,9 @@
 {
   "name": "cloudflare-stagehand",
   "version": "2.5.8-beta.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "An AI web browsing framework focused on simplicity and extensibility.",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
