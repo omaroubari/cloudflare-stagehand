@@ -50,8 +50,7 @@ async function withStagehand(
   env: Env,
   fn: (stagehand: Stagehand) => Promise<Response>,
 ): Promise<Response> {
-  const modelName =
-    (body.modelName as string) || "google/gemini-2.5-flash-lite";
+  const modelName = (body.modelName as string) || "google/gemini-3-flash";
 
   const stagehand = new Stagehand({
     env: "CLOUDFLARE",
@@ -67,25 +66,31 @@ async function withStagehand(
 
   await stagehand.init();
 
+  let response: Response | undefined;
   let operationError: unknown;
+  let closeError: unknown;
 
   try {
-    const result = await fn(stagehand);
-    return result;
+    response = await fn(stagehand);
   } catch (error) {
     operationError = error;
-    throw error;
   } finally {
     try {
       await stagehand.close();
-    } catch (closeError) {
-      if (operationError !== undefined) {
-        throw operationError;
-      }
-
-      throw closeError;
+    } catch (error) {
+      closeError = error;
     }
   }
+
+  if (operationError !== undefined) {
+    throw operationError;
+  }
+
+  if (closeError !== undefined) {
+    throw closeError;
+  }
+
+  return response as Response;
 }
 
 async function handleNavigate(request: Request, env: Env): Promise<Response> {
@@ -100,7 +105,7 @@ async function handleNavigate(request: Request, env: Env): Promise<Response> {
     return Response.json({
       success: true,
       url: stagehand.page.url(),
-      title: await stagehand.page.title(),
+      title: await stagehand.page.title().catch(() => ""),
     });
   });
 }
