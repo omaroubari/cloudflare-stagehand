@@ -380,12 +380,30 @@ export class CloudflareBrowserProvider implements StagehandBrowserProvider {
       );
     }
 
-    const browser = (await launchBrowser(this.browserBinding, {
-      keep_alive: 60_000,
-    })) as Browser;
-    const context = await browser.newContext();
-    this.browser = browser;
-    return { browser, context, env: "CLOUDFLARE" };
+    try {
+      const browser = (await launchBrowser(this.browserBinding, {
+        // LLM-backed observe/act can exceed Cloudflare's short default idle
+        // window. This does not guarantee the page survives every operation, but
+        // it reduces target closures while inference is running.
+        keep_alive: 600_000,
+      })) as Browser;
+      const context = await browser.newContext();
+      this.browser = browser;
+      return { browser, context, env: "CLOUDFLARE" };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        message.includes("Cannot read properties of null (reading 'accept')")
+      ) {
+        throw new StagehandError(
+          "Failed to initialize Stagehand with the Cloudflare browser binding. " +
+            'Add "no_websocket_standard_binary_type" to your wrangler compatibility_flags or use a compatibility_date before 2026-03-17. ' +
+            `Original error: ${message}`,
+        );
+      }
+
+      throw error;
+    }
   }
 
   async close(): Promise<void> {
@@ -951,6 +969,9 @@ export class Stagehand {
     });
 
     if (this.env !== "CLOUDFLARE") {
+      // Browser.setDownloadBehavior is a local/Browserbase CDP command. Do not
+      // send it to Cloudflare's managed browser runs; raw CDP commands there can
+      // close or detach the target.
       const session = await this.context.newCDPSession(this.page);
       await session.send("Browser.setDownloadBehavior", {
         behavior: "allow",

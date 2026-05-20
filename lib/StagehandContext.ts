@@ -39,7 +39,9 @@ export class StagehandContext {
           return async (): Promise<Page> => {
             const pwPage = await target.newPage();
             const stagehandPage = await this.createStagehandPage(pwPage);
-            await this.attachFrameNavigatedListener(pwPage);
+            if (this.stagehand.env !== "CLOUDFLARE") {
+              await this.attachFrameNavigatedListener(pwPage);
+            }
             // Set as active page when created
             this.setActivePage(stagehandPage);
             return stagehandPage.page;
@@ -104,6 +106,8 @@ export class StagehandContext {
     context.on("page", async (pwPage) => {
       await instance.handleNewPlaywrightPage(pwPage);
       if (stagehand.env !== "CLOUDFLARE") {
+        // This listener is CDP-backed. Cloudflare uses Playwright-only page
+        // tracking because Target/Page CDP calls can detach managed sessions.
         instance
           .attachFrameNavigatedListener(pwPage)
           .catch((err) =>
@@ -143,6 +147,8 @@ export class StagehandContext {
         throw err;
       }
       if (stagehand.env !== "CLOUDFLARE") {
+        // Same Cloudflare CDP restriction as above: avoid frame navigation
+        // listeners for managed browser runs.
         await instance.attachFrameNavigatedListener(page);
       }
       // Set the first page as active

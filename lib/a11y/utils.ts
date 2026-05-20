@@ -36,6 +36,421 @@ const WORLD_NAME = "stagehand-world";
 const DOM_DEPTH_ATTEMPTS = [-1, 256, 128, 64, 32, 16, 8, 4, 2, 1];
 const DESCRIBE_DEPTH_ATTEMPTS = [-1, 64, 32, 16, 8, 4, 2, 1];
 
+type PlaywrightA11ySnapshot = {
+  combinedTree: string;
+  combinedXpathMap: Record<EncodedId, string>;
+  combinedUrlMap: Record<EncodedId, string>;
+  discoveredIframes: AccessibilityNode[];
+};
+
+type FrameSnapshotNode = {
+  role: string;
+  name?: string;
+  value?: string;
+  description?: string;
+  url?: string;
+  xpath: string;
+  depth: number;
+};
+
+async function snapshotFrameElements(
+  frame: Frame,
+  rootXPath?: string,
+): Promise<FrameSnapshotNode[]> {
+  return frame.evaluate(
+    ({ rootXPath }) => {
+      type SnapshotNode = FrameSnapshotNode;
+
+      const MAX_NAME_LENGTH = 500;
+      const MAX_NODES = 500;
+
+      const normalize = (value?: string | null): string =>
+        (value || "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
+
+      const isVisible = (element: Element): boolean => {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return (
+          style.visibility !== "hidden" &&
+          style.display !== "none" &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
+      };
+
+      const isAriaHidden = (element: Element): boolean => {
+        for (
+          let current: Element | null = element;
+          current;
+          current = current.parentElement
+        ) {
+          if (current.getAttribute("aria-hidden") === "true") return true;
+          if (current.hasAttribute("hidden")) return true;
+        }
+        return false;
+      };
+
+      const xpathFor = (element: Element): string => {
+        if (element === document.documentElement) return "/html[1]";
+        const parts: string[] = [];
+        let current: Element | null = element;
+        while (current && current.nodeType === Node.ELEMENT_NODE) {
+          const tag = current.localName.toLowerCase();
+          let index = 1;
+          for (
+            let sibling = current.previousElementSibling;
+            sibling;
+            sibling = sibling.previousElementSibling
+          ) {
+            if (sibling.localName.toLowerCase() === tag) index++;
+          }
+          parts.unshift(`${tag}[${index}]`);
+          current = current.parentElement;
+        }
+        return `/${parts.join("/")}`;
+      };
+
+      const hasExplicitSemantics = (element: Element): boolean => {
+        const tag = element.localName.toLowerCase();
+        return (
+          element.hasAttribute("role") ||
+          element.hasAttribute("aria-label") ||
+          element.hasAttribute("aria-labelledby") ||
+          element.hasAttribute("aria-describedby") ||
+          element.hasAttribute("tabindex") ||
+          element.hasAttribute("onclick") ||
+          tag === "a" ||
+          tag === "button" ||
+          tag === "input" ||
+          tag === "select" ||
+          tag === "textarea" ||
+          tag === "summary" ||
+          tag === "details" ||
+          tag === "iframe" ||
+          tag === "img" ||
+          tag === "label" ||
+          tag === "table" ||
+          tag === "th" ||
+          tag === "td" ||
+          tag === "li" ||
+          /^h[1-6]$/.test(tag)
+        );
+      };
+
+      const roleFor = (element: Element): string => {
+        const explicitRole = element.getAttribute("role");
+        if (explicitRole) return explicitRole;
+        const tag = element.localName.toLowerCase();
+        if (tag === "a" && element.hasAttribute("href")) return "link";
+        if (tag === "button") return "button";
+        if (tag === "select") return "select";
+        if (tag === "textarea") return "textbox";
+        if (tag === "input") {
+          const type = (element.getAttribute("type") || "text").toLowerCase();
+          if (["button", "submit", "reset"].includes(type)) return "button";
+          if (type === "checkbox") return "checkbox";
+          if (type === "radio") return "radio";
+          if (type === "range") return "slider";
+          return "textbox";
+        }
+        if (tag === "iframe") return "Iframe";
+        if (/^h[1-6]$/.test(tag)) return "heading";
+        if (tag === "img") return "img";
+        if (tag === "ul" || tag === "ol") return "list";
+        if (tag === "li") return "listitem";
+        if (tag === "table") return "table";
+        if (tag === "tr") return "row";
+        if (tag === "th") return "columnheader";
+        if (tag === "td") return "cell";
+        if (tag === "form") return "form";
+        if (tag === "nav") return "navigation";
+        if (tag === "main") return "main";
+        if (tag === "header") return "banner";
+        if (tag === "footer") return "contentinfo";
+        if (tag === "section") return "region";
+        if (tag === "article") return "article";
+        if (tag === "label") return "label";
+        if (tag === "p") return "paragraph";
+        return tag;
+      };
+
+      const textByIds = (ids: string | null): string => {
+        if (!ids) return "";
+        return normalize(
+          ids
+            .split(/\s+/)
+            .map((id) => document.getElementById(id)?.textContent)
+            .filter(Boolean)
+            .join(" "),
+        );
+      };
+
+      const nameFor = (element: Element): string => {
+        const labelledBy = textByIds(element.getAttribute("aria-labelledby"));
+        if (labelledBy) return labelledBy;
+
+        const ariaLabel = normalize(element.getAttribute("aria-label"));
+        if (ariaLabel) return ariaLabel;
+
+        if (element instanceof HTMLInputElement) {
+          const labelText = normalize(element.labels?.[0]?.textContent);
+          if (labelText) return labelText;
+          if (element.placeholder) return element.placeholder;
+          if (["button", "submit", "reset"].includes(element.type)) {
+            return element.value || element.type;
+          }
+        }
+
+        if (
+          element instanceof HTMLTextAreaElement &&
+          element.placeholder.trim()
+        ) {
+          return normalize(element.placeholder);
+        }
+
+        if (element instanceof HTMLImageElement && element.alt) {
+          return normalize(element.alt);
+        }
+
+        if (element instanceof HTMLOptionElement)
+          return normalize(element.label);
+
+        return normalize(element.textContent);
+      };
+
+      const descriptionFor = (element: Element): string | undefined => {
+        const describedBy = textByIds(element.getAttribute("aria-describedby"));
+        if (describedBy) return describedBy;
+        const title = normalize(element.getAttribute("title"));
+        return title || undefined;
+      };
+
+      const valueFor = (element: Element): string | undefined => {
+        if (
+          element instanceof HTMLInputElement ||
+          element instanceof HTMLTextAreaElement ||
+          element instanceof HTMLSelectElement
+        ) {
+          return normalize(element.value);
+        }
+        const ariaValueText = normalize(element.getAttribute("aria-valuetext"));
+        if (ariaValueText) return ariaValueText;
+        const ariaValueNow = normalize(element.getAttribute("aria-valuenow"));
+        return ariaValueNow || undefined;
+      };
+
+      const isScrollable = (element: Element): boolean => {
+        const style = window.getComputedStyle(element);
+        return (
+          /(auto|scroll)/.test(
+            `${style.overflow}${style.overflowX}${style.overflowY}`,
+          ) &&
+          (element.scrollHeight > element.clientHeight ||
+            element.scrollWidth > element.clientWidth)
+        );
+      };
+
+      const shouldKeep = (element: Element): boolean => {
+        if (
+          !(element instanceof HTMLElement) &&
+          !(element instanceof SVGElement)
+        ) {
+          return false;
+        }
+        const tag = element.localName.toLowerCase();
+        if (
+          [
+            "html",
+            "body",
+            "head",
+            "script",
+            "style",
+            "meta",
+            "link",
+            "template",
+          ].includes(tag)
+        ) {
+          return false;
+        }
+        if (isAriaHidden(element) || !isVisible(element)) return false;
+        if (hasExplicitSemantics(element)) return true;
+        if (isScrollable(element)) return true;
+        const role = roleFor(element);
+        if (role !== "div" && role !== "span") return true;
+        return false;
+      };
+
+      const resolveRoot = (): Element => {
+        if (!rootXPath) return document.body ?? document.documentElement;
+        const result = document.evaluate(
+          rootXPath,
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null,
+        );
+        return (
+          (result.singleNodeValue as Element | null) ??
+          document.body ??
+          document.documentElement
+        );
+      };
+
+      const root = resolveRoot();
+
+      const candidateSelector = [
+        "a[href]",
+        "button",
+        "input",
+        "select",
+        "textarea",
+        "summary",
+        "details",
+        "iframe",
+        "img[alt]",
+        "label",
+        "table",
+        "th",
+        "td",
+        "li",
+        "nav",
+        "main",
+        "header",
+        "footer",
+        "section[aria-label]",
+        "section[aria-labelledby]",
+        "article",
+        "form",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "[role]",
+        "[aria-label]",
+        "[aria-labelledby]",
+        "[aria-describedby]",
+        "[contenteditable='true']",
+        "[onclick]",
+        "[tabindex]:not([tabindex='-1'])",
+      ].join(",");
+
+      const candidates = Array.from(root.querySelectorAll(candidateSelector))
+        .filter(shouldKeep)
+        .slice(0, MAX_NODES);
+
+      const depthByElement = new WeakMap<Element, number>();
+      const nodes: SnapshotNode[] = candidates.map((element) => {
+        let depth = 0;
+        for (
+          let parent = element.parentElement;
+          parent;
+          parent = parent.parentElement
+        ) {
+          const parentDepth = depthByElement.get(parent);
+          if (parentDepth !== undefined) {
+            depth = parentDepth + 1;
+            break;
+          }
+        }
+        depthByElement.set(element, depth);
+        return {
+          role: roleFor(element),
+          name: nameFor(element),
+          value: valueFor(element),
+          description: descriptionFor(element),
+          url:
+            element instanceof HTMLAnchorElement && element.href
+              ? element.href
+              : undefined,
+          xpath: xpathFor(element),
+          depth,
+        };
+      });
+
+      return nodes;
+    },
+    { rootXPath: rootXPath?.trim() || undefined },
+  );
+}
+
+export async function getPlaywrightAccessibilityTree(
+  stagehandPage: StagehandPage,
+  rootXPath?: string,
+  includeFrames = false,
+): Promise<PlaywrightA11ySnapshot> {
+  const combinedXpathMap: Record<EncodedId, string> = {};
+  const combinedUrlMap: Record<EncodedId, string> = {};
+  const discoveredIframes: AccessibilityNode[] = [];
+  const lines: string[] = [];
+  let nextElementId = 1;
+
+  async function collectFrameSnapshot(
+    frame: Frame,
+    framePrefix: string,
+    depthOffset: number,
+    rootXPath?: string,
+  ): Promise<void> {
+    const nodes = await snapshotFrameElements(frame, rootXPath);
+    const childFramesByHostXpath = new Map<string, Frame>();
+
+    for (const childFrame of frame.childFrames()) {
+      try {
+        const hostXpath = await getFrameRootXpath(childFrame);
+        childFramesByHostXpath.set(hostXpath, childFrame);
+      } catch {
+        continue;
+      }
+    }
+
+    for (const node of nodes) {
+      const elementId = `0-${nextElementId++}` as EncodedId;
+      const absoluteXpath = `${framePrefix}${node.xpath}`;
+
+      combinedXpathMap[elementId] = absoluteXpath;
+      if (node.url) combinedUrlMap[elementId] = node.url;
+      if (node.role === "Iframe" && !includeFrames) {
+        discoveredIframes.push({ role: "Iframe", nodeId: elementId });
+      }
+
+      const name = node.name ? `: ${node.name}` : "";
+      const description = node.description
+        ? ` (${cleanText(node.description)})`
+        : "";
+      const value = node.value ? ` value=${JSON.stringify(node.value)}` : "";
+      lines.push(
+        `${"  ".repeat(depthOffset + node.depth)}[${elementId}] ${node.role}${name}${description}${value}`,
+      );
+
+      if (!includeFrames || node.role !== "Iframe") {
+        continue;
+      }
+
+      const childFrame = childFramesByHostXpath.get(node.xpath);
+      if (!childFrame) continue;
+
+      await collectFrameSnapshot(
+        childFrame,
+        absoluteXpath,
+        depthOffset + node.depth + 1,
+      );
+    }
+  }
+
+  await collectFrameSnapshot(stagehandPage.page.mainFrame(), "", 0, rootXPath);
+
+  const combinedTree = lines.join("\n");
+
+  return {
+    combinedTree,
+    combinedXpathMap,
+    combinedUrlMap,
+    discoveredIframes,
+  };
+}
+
 function isCborStackError(message: string): boolean {
   return message.includes("CBOR: stack limit exceeded");
 }

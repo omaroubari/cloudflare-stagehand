@@ -7,6 +7,7 @@ import { trimTrailingTextNode } from "../utils";
 import {
   getAccessibilityTree,
   getAccessibilityTreeWithFrames,
+  getPlaywrightAccessibilityTree,
 } from "../a11y/utils";
 import { AccessibilityNode, EncodedId } from "@/types/context";
 
@@ -91,26 +92,43 @@ export class StagehandObserveHandler {
       message: "Getting accessibility tree data",
       level: 1,
     });
-    const { combinedTree, combinedXpathMap, discoveredIframes } = await (iframes
-      ? getAccessibilityTreeWithFrames(
-          this.experimental,
-          this.stagehandPage,
-          this.logger,
-        ).then(({ combinedTree, combinedXpathMap }) => ({
-          combinedTree,
-          combinedXpathMap,
-          discoveredIframes: [] as AccessibilityNode[],
-        }))
-      : getAccessibilityTree(
-          this.experimental,
-          this.stagehandPage,
-          this.logger,
-        ).then(({ simplified, xpathMap, idToUrl, iframes: frameNodes }) => ({
-          combinedTree: simplified,
-          combinedXpathMap: xpathMap,
-          combinedUrlMap: idToUrl,
-          discoveredIframes: frameNodes,
-        })));
+    const {
+      combinedTree,
+      combinedXpathMap,
+      combinedUrlMap,
+      discoveredIframes,
+    } =
+      this.stagehand.env === "CLOUDFLARE"
+        ? // Cloudflare uses the Playwright-only DOM fallback because CDP-backed
+          // accessibility snapshots can close the managed target mid-request.
+          await getPlaywrightAccessibilityTree(
+            this.stagehandPage,
+            undefined,
+            iframes,
+          )
+        : await (iframes
+            ? getAccessibilityTreeWithFrames(
+                this.experimental,
+                this.stagehandPage,
+                this.logger,
+              ).then(({ combinedTree, combinedXpathMap }) => ({
+                combinedTree,
+                combinedXpathMap,
+                combinedUrlMap: {} as Record<EncodedId, string>,
+                discoveredIframes: [] as AccessibilityNode[],
+              }))
+            : getAccessibilityTree(
+                this.experimental,
+                this.stagehandPage,
+                this.logger,
+              ).then(
+                ({ simplified, xpathMap, idToUrl, iframes: frameNodes }) => ({
+                  combinedTree: simplified,
+                  combinedXpathMap: xpathMap,
+                  combinedUrlMap: idToUrl,
+                  discoveredIframes: frameNodes,
+                }),
+              ));
 
     // No screenshot or vision-based annotation is performed
     const observationResponse = await observe({
@@ -201,6 +219,7 @@ export class StagehandObserveHandler {
             return {
               ...rest,
               selector: `xpath=${trimmedXpath}`,
+              href: combinedUrlMap[lookUpIndex],
               // Provisioning or future use if we want to use direct CDP
               // backendNodeId: elementId,
             };

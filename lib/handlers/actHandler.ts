@@ -103,6 +103,7 @@ export class StagehandActHandler {
         method,
         args,
         selector,
+        observe.href,
         domSettleTimeoutMs,
       );
 
@@ -174,6 +175,7 @@ export class StagehandActHandler {
           observe.arguments,
           // only update selector
           element.selector,
+          element.href,
           domSettleTimeoutMs,
         );
         return {
@@ -287,6 +289,20 @@ export class StagehandActHandler {
         });
       }
 
+      if (this.stagehandPage.env === "CLOUDFLARE" && element.href) {
+        // Link clicks are the one Cloudflare action we can make stateless:
+        // observe carries the href, so we can navigate directly instead of
+        // depending on the same page surviving long enough for a locator click.
+        // Non-link buttons still use the normal locator path and may fail if
+        // Cloudflare closes the managed page between observe and act.
+        await this.stagehandPage.performCloudflareLinkNavigation(element.href);
+        return {
+          success: true,
+          message: `Cloudflare link action navigated to: ${element.href}`,
+          action: element.description || action,
+        };
+      }
+
       return this.actFromObserveResult(
         element,
         actionOrOptions.domSettleTimeoutMs,
@@ -319,6 +335,7 @@ export class StagehandActHandler {
     method: string,
     args: unknown[],
     rawXPath: string,
+    href?: string,
     domSettleTimeoutMs?: number,
   ) {
     const xpath = rawXPath.replace(/^xpath=/i, "").trim();
@@ -346,6 +363,7 @@ export class StagehandActHandler {
       locator,
       xpath,
       args,
+      href,
       logger: this.logger,
       stagehandPage: this.stagehandPage,
       initialUrl,

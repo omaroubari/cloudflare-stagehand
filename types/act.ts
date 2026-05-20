@@ -51,6 +51,8 @@ export interface MethodHandlerContext {
   locator: Locator;
   xpath: string;
   args: unknown[];
+  /** Anchor URL from observe, when the selected element is a link. */
+  href?: string;
   logger: Logger;
   stagehandPage: StagehandPage;
   initialUrl: string;

@@ -9,6 +9,7 @@ import { ZodPathSegments } from "../types/stagehand";
 export const TARGET_GONE_ERROR_SNIPPETS = [
   "No target with given id found",
   "Target closed",
+  "Target page, context or browser has been closed",
 ];
 
 export function isTargetGoneError(err: unknown): boolean {

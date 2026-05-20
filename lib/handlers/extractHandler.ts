@@ -10,6 +10,7 @@ import { pageTextSchema } from "../../types/page";
 import {
   getAccessibilityTree,
   getAccessibilityTreeWithFrames,
+  getPlaywrightAccessibilityTree,
 } from "@/lib/a11y/utils";
 import { EncodedId } from "@/types/context";
 
@@ -101,11 +102,16 @@ export class StagehandExtractHandler {
     domSettleTimeoutMs?: number,
   ): Promise<{ page_text?: string }> {
     await this.stagehandPage._waitForSettledDom(domSettleTimeoutMs);
-    const tree = await getAccessibilityTree(
-      this.experimental,
-      this.stagehandPage,
-      this.logger,
-    );
+    const tree =
+      this.stagehand.env === "CLOUDFLARE"
+        ? await getPlaywrightAccessibilityTree(this.stagehandPage).then(
+            ({ combinedTree }) => ({ simplified: combinedTree }),
+          )
+        : await getAccessibilityTree(
+            this.experimental,
+            this.stagehandPage,
+            this.logger,
+          );
     this.logger({
       category: "extraction",
       message: "Getting accessibility tree data",
@@ -153,29 +159,35 @@ export class StagehandExtractHandler {
       combinedTree: outputString,
       combinedUrlMap: idToUrlMapping,
       discoveredIframes,
-    } = await (iframes
-      ? getAccessibilityTreeWithFrames(
-          this.experimental,
+    } = this.stagehand.env === "CLOUDFLARE"
+      ? await getPlaywrightAccessibilityTree(
           this.stagehandPage,
-          this.logger,
           targetXpath,
-        ).then(({ combinedTree, combinedUrlMap }) => ({
-          combinedTree,
-          combinedUrlMap,
-          combinedXpathMap: {} as Record<EncodedId, string>,
-          discoveredIframes: [] as undefined,
-        }))
-      : getAccessibilityTree(
-          this.experimental,
-          this.stagehandPage,
-          this.logger,
-          targetXpath,
-        ).then(({ simplified, idToUrl, iframes: frameNodes }) => ({
-          combinedTree: simplified,
-          combinedUrlMap: idToUrl as Record<EncodedId, string>,
-          combinedXpathMap: {} as Record<EncodedId, string>,
-          discoveredIframes: frameNodes,
-        })));
+          iframes,
+        )
+      : await (iframes
+          ? getAccessibilityTreeWithFrames(
+              this.experimental,
+              this.stagehandPage,
+              this.logger,
+              targetXpath,
+            ).then(({ combinedTree, combinedUrlMap }) => ({
+              combinedTree,
+              combinedUrlMap,
+              combinedXpathMap: {} as Record<EncodedId, string>,
+              discoveredIframes: [] as undefined,
+            }))
+          : getAccessibilityTree(
+              this.experimental,
+              this.stagehandPage,
+              this.logger,
+              targetXpath,
+            ).then(({ simplified, idToUrl, iframes: frameNodes }) => ({
+              combinedTree: simplified,
+              combinedUrlMap: idToUrl as Record<EncodedId, string>,
+              combinedXpathMap: {} as Record<EncodedId, string>,
+              discoveredIframes: frameNodes,
+            })));
 
     this.logger({
       category: "extraction",

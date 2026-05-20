@@ -229,7 +229,7 @@ export const methodHandlerMap: Record<
 };
 
 export async function scrollToNextChunk(ctx: MethodHandlerContext) {
-  const { locator, logger, xpath } = ctx;
+  const { locator, logger, xpath, stagehandPage } = ctx;
 
   logger({
     category: "action",
@@ -241,6 +241,18 @@ export async function scrollToNextChunk(ctx: MethodHandlerContext) {
   });
 
   try {
+    if (stagehandPage.env === "CLOUDFLARE") {
+      // Use Playwright input primitives instead of element.evaluate(); raw page
+      // evaluation has been one of the Cloudflare closed-target failure points.
+      await locator.scrollIntoViewIfNeeded({ timeout: 3_500 }).catch(() => {});
+      await locator.hover({ timeout: 3_500 }).catch(() => {});
+      await stagehandPage.page.mouse.wheel(
+        0,
+        await getViewportScrollAmount(stagehandPage),
+      );
+      return;
+    }
+
     await locator.evaluate(
       (element) => {
         const waitForScrollEnd = (el: HTMLElement | Element) =>
@@ -297,7 +309,7 @@ export async function scrollToNextChunk(ctx: MethodHandlerContext) {
 }
 
 export async function scrollToPreviousChunk(ctx: MethodHandlerContext) {
-  const { locator, logger, xpath } = ctx;
+  const { locator, logger, xpath, stagehandPage } = ctx;
 
   logger({
     category: "action",
@@ -309,6 +321,18 @@ export async function scrollToPreviousChunk(ctx: MethodHandlerContext) {
   });
 
   try {
+    if (stagehandPage.env === "CLOUDFLARE") {
+      // Use Playwright input primitives instead of element.evaluate(); raw page
+      // evaluation has been one of the Cloudflare closed-target failure points.
+      await locator.scrollIntoViewIfNeeded({ timeout: 3_500 }).catch(() => {});
+      await locator.hover({ timeout: 3_500 }).catch(() => {});
+      await stagehandPage.page.mouse.wheel(
+        0,
+        -(await getViewportScrollAmount(stagehandPage)),
+      );
+      return;
+    }
+
     await locator.evaluate(
       (element) => {
         const waitForScrollEnd = (el: HTMLElement | Element) =>
@@ -361,7 +385,7 @@ export async function scrollToPreviousChunk(ctx: MethodHandlerContext) {
 }
 
 export async function scrollElementIntoView(ctx: MethodHandlerContext) {
-  const { locator, xpath, logger } = ctx;
+  const { locator, xpath, logger, stagehandPage } = ctx;
 
   logger({
     category: "action",
@@ -373,6 +397,13 @@ export async function scrollElementIntoView(ctx: MethodHandlerContext) {
   });
 
   try {
+    if (stagehandPage.env === "CLOUDFLARE") {
+      // scrollIntoViewIfNeeded is a Playwright action and avoids injecting a
+      // custom evaluate callback into Cloudflare's managed page.
+      await locator.scrollIntoViewIfNeeded({ timeout: 3_500 });
+      return;
+    }
+
     await locator.evaluate((element: HTMLElement) => {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
     });
@@ -392,7 +423,7 @@ export async function scrollElementIntoView(ctx: MethodHandlerContext) {
 }
 
 export async function scrollElementToPercentage(ctx: MethodHandlerContext) {
-  const { args, xpath, logger, locator } = ctx;
+  const { args, xpath, logger, locator, stagehandPage } = ctx;
 
   logger({
     category: "action",
@@ -406,6 +437,20 @@ export async function scrollElementToPercentage(ctx: MethodHandlerContext) {
 
   try {
     const [yArg = "0%"] = args as string[];
+
+    if (stagehandPage.env === "CLOUDFLARE") {
+      // Approximate percentage scrolling with wheel input so Cloudflare does not
+      // need to run element.scrollTo inside page.evaluate().
+      const yPct = parsePercent(yArg);
+      await locator.scrollIntoViewIfNeeded({ timeout: 3_500 }).catch(() => {});
+      await locator.hover({ timeout: 3_500 }).catch(() => {});
+      const viewportScrollAmount = await getViewportScrollAmount(stagehandPage);
+      await stagehandPage.page.mouse.wheel(
+        0,
+        viewportScrollAmount * ((yPct - 50) / 50),
+      );
+      return;
+    }
 
     await locator.evaluate<void, { yArg: string }>(
       (element, { yArg }) => {
@@ -454,6 +499,19 @@ export async function scrollElementToPercentage(ctx: MethodHandlerContext) {
     });
     throw new PlaywrightCommandException(e.message);
   }
+}
+
+function parsePercent(val: string): number {
+  const cleaned = val.trim().replace("%", "");
+  const num = parseFloat(cleaned);
+  return Number.isNaN(num) ? 0 : Math.max(0, Math.min(num, 100));
+}
+
+async function getViewportScrollAmount(
+  stagehandPage: StagehandPage,
+): Promise<number> {
+  const viewport = stagehandPage.page.viewportSize();
+  return Math.max(400, viewport?.height ?? 800);
 }
 
 export async function fillOrType(ctx: MethodHandlerContext) {
@@ -540,6 +598,7 @@ export async function clickElement(ctx: MethodHandlerContext) {
     locator,
     xpath,
     args,
+    href,
     logger,
     stagehandPage,
     initialUrl,
@@ -559,7 +618,28 @@ export async function clickElement(ctx: MethodHandlerContext) {
   });
 
   try {
-    await locator.click({ timeout: 3_500 });
+    if (stagehandPage.env === "CLOUDFLARE") {
+      if (href) {
+        // Cloudflare link actions are handled by direct navigation rather than
+        // locator clicking, because the managed browser can close between
+        // observe and act and still preserve the URL we need to visit.
+        await stagehandPage.page.goto(href, {
+          waitUntil: "domcontentloaded",
+        });
+        await handlePossiblePageNavigation(
+          "click",
+          xpath,
+          initialUrl,
+          stagehandPage,
+          logger,
+          domSettleTimeoutMs,
+        );
+        return;
+      }
+      await clickElementWithMouse(ctx);
+    } else {
+      await locator.click({ timeout: 3_500 });
+    }
   } catch (e) {
     logger({
       category: "action",
@@ -573,6 +653,10 @@ export async function clickElement(ctx: MethodHandlerContext) {
         args: { value: JSON.stringify(args), type: "object" },
       },
     });
+
+    if (stagehandPage.env === "CLOUDFLARE") {
+      throw new StagehandClickError(e.message, xpath);
+    }
 
     try {
       await locator.evaluate((el) => (el as HTMLElement).click(), undefined, {
@@ -591,7 +675,7 @@ export async function clickElement(ctx: MethodHandlerContext) {
           args: { value: JSON.stringify(args), type: "object" },
         },
       });
-      throw new StagehandClickError(xpath, e.message);
+      throw new StagehandClickError(e.message, xpath);
     }
   }
 
@@ -602,6 +686,22 @@ export async function clickElement(ctx: MethodHandlerContext) {
     stagehandPage,
     logger,
     domSettleTimeoutMs,
+  );
+}
+
+async function clickElementWithMouse(ctx: MethodHandlerContext): Promise<void> {
+  const { locator, xpath, stagehandPage } = ctx;
+
+  await locator.scrollIntoViewIfNeeded({ timeout: 3_500 }).catch(() => {});
+  const box = await locator.boundingBox({ timeout: 3_500 });
+
+  if (!box) {
+    throw new StagehandClickError("Element has no visible bounding box", xpath);
+  }
+
+  await stagehandPage.page.mouse.click(
+    box.x + box.width / 2,
+    box.y + box.height / 2,
   );
 }
 
@@ -659,6 +759,18 @@ async function handlePossiblePageNavigation(
       xpath: { value: xpath, type: "string" },
     },
   });
+
+  if (stagehandPage.page.isClosed()) {
+    logger({
+      category: "action",
+      message: "page closed before navigation check completed",
+      level: 1,
+      auxiliary: {
+        xpath: { value: xpath, type: "string" },
+      },
+    });
+    return;
+  }
 
   const newOpenedTab = await Promise.race([
     new Promise<Page | null>((resolve) => {

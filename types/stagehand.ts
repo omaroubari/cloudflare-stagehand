@@ -184,6 +184,8 @@ export interface ObserveResult {
   backendNodeId?: number;
   method?: string;
   arguments?: string[];
+  /** Anchor URL captured during observe; used for explicit Cloudflare link actions. */
+  href?: string;
 }
 
 export interface LocalBrowserLaunchOptions {

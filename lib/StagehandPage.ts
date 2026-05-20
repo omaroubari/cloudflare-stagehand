@@ -70,6 +70,10 @@ export class StagehandPage {
     return this.rootFrameId;
   }
 
+  public get env(): Stagehand["env"] {
+    return this.stagehand.env;
+  }
+
   public updateRootFrameId(newId: string): void {
     this.rootFrameId = newId;
   }
@@ -499,6 +503,9 @@ export class StagehandPage {
       };
 
       if (this.stagehand.env === "CLOUDFLARE") {
+        // Avoid Page.enable/Page.getFrameTree here. Cloudflare's managed
+        // Playwright sessions can expose unstable CDP targets, so we use a
+        // synthetic main-frame id for code that only needs an encoded id prefix.
         this.updateRootFrameId("main");
         this.intContext.registerFrameId("main", this);
       } else {
@@ -531,6 +538,24 @@ export class StagehandPage {
 
   public get context(): EnhancedContext {
     return this.intContext.context;
+  }
+
+  public async performCloudflareLinkNavigation(href: string): Promise<void> {
+    if (this.stagehand.env !== "CLOUDFLARE") {
+      await this.page.goto(href, { waitUntil: "domcontentloaded" });
+      return;
+    }
+
+    try {
+      await this.page.goto(href, { waitUntil: "domcontentloaded" });
+    } catch (error) {
+      if (!isTargetGoneError(error)) throw error;
+      // Cloudflare can close the whole browser run after observe/LLM latency.
+      // Re-init is explicit here so link actions remain recoverable, but this
+      // does not make non-link button clicks stateless or generally recoverable.
+      await this.stagehand.init();
+      await this.stagehand.page.goto(href, { waitUntil: "domcontentloaded" });
+    }
   }
 
   /**
@@ -567,6 +592,9 @@ export class StagehandPage {
    */
   public async _waitForSettledDom(timeoutMs?: number): Promise<void> {
     if (this.stagehand.env === "CLOUDFLARE") {
+      // The normal settled-DOM wait relies on CDP Network/Page/Target domains.
+      // For Cloudflare, stick to Playwright's load state to avoid closed-target
+      // failures from raw CDP session.send calls.
       await this.page.waitForLoadState("domcontentloaded").catch(() => {});
       return;
     }
