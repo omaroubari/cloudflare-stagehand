@@ -37,6 +37,16 @@ If you're looking for the Python implementation, you can find it
 <a href="https://github.com/browserbase/stagehand-python"> here</a>
 </p>
 
+## Cloudflare Browser Run Fork
+
+This fork of [Browserbase Stagehand](https://github.com/browserbase/stagehand) adds first-class support for [Cloudflare Browser Run](https://developers.cloudflare.com/browser-rendering/) through [`@cloudflare/playwright`](https://www.npmjs.com/package/@cloudflare/playwright). It keeps the Stagehand API surface intact while allowing a Worker to initialize Stagehand with `env: "CLOUDFLARE"` and a Cloudflare browser binding.
+
+The Cloudflare support was added by introducing a browser provider seam for local Playwright, Browserbase, and Cloudflare Browser Run. The Cloudflare provider launches with `@cloudflare/playwright` using the Worker `BROWSER` binding, returns a Playwright context to Stagehand, and owns Cloudflare-specific browser cleanup.
+
+Several Stagehand internals also needed Cloudflare-specific paths because Cloudflare managed browser sessions are less tolerant of raw CDP setup than local Chrome or Browserbase sessions. This fork avoids CDP-only initialization such as `Page.enable`, frame-tree lookup, frame navigation listeners, and `Browser.setDownloadBehavior` when running in Cloudflare. DOM settling falls back to Playwright load state, and observe/extract use a Playwright-driven accessibility snapshot rather than CDP accessibility calls.
+
+Actions were adjusted for Cloudflare as well. Link actions can navigate directly from the `href` captured during observe, scrolling uses Playwright input primitives instead of page-evaluated JavaScript where needed, and target-closed errors are handled defensively. The repository also includes a `cf-worker/` harness and deterministic Cloudflare tests that exercise initialization, observe, extract, act, iframe handling, and provider behavior.
+
 <div align="center" style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 0;">
   <b>Vibe code</b>
   <span style="font-size: 1.05em;"> Stagehand with </span>
