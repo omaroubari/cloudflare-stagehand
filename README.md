@@ -47,6 +47,44 @@ Several Stagehand internals also needed Cloudflare-specific paths because Cloudf
 
 Actions were adjusted for Cloudflare as well. Link actions can navigate directly from the `href` captured during observe, scrolling uses Playwright input primitives instead of page-evaluated JavaScript where needed, and target-closed errors are handled defensively. The repository also includes a `cf-worker/` harness and deterministic Cloudflare tests that exercise initialization, observe, extract, act, iframe handling, and provider behavior.
 
+## Using Cloudflare Browser Run
+
+In a Cloudflare Worker, create a `CloudflareBrowserProvider` with the Worker `BROWSER` binding and the `launch` function from `@cloudflare/playwright`.
+
+```ts
+import { launch } from "@cloudflare/playwright";
+import { CloudflareBrowserProvider, Stagehand } from "@browserbasehq/stagehand";
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const stagehand = new Stagehand({
+      env: "CLOUDFLARE",
+      browserProvider: new CloudflareBrowserProvider(env.BROWSER, launch),
+      modelName: "google/gemini-3-flash",
+      modelClientOptions: {
+        apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
+      },
+    });
+
+    await stagehand.init();
+    await stagehand.page.goto("https://example.com", { waitUntil: "domcontentloaded" });
+    const title = await stagehand.page.title();
+    await stagehand.close();
+
+    return Response.json({ title });
+  },
+};
+```
+
+Gotchas:
+
+- Pass `env: "CLOUDFLARE"`; Stagehand uses that to skip Browserbase and local-browser paths.
+- `browserProvider` must receive the Cloudflare `BROWSER` binding plus the `launch` function. Without both, initialization fails.
+- Set `keep_alive` is handled for you by the provider, but Cloudflare browser sessions can still close mid-action on long runs. Keep actions tight and prefer shorter workflows.
+- If you see `Cannot read properties of null (reading 'accept')`, add `"no_websocket_standard_binary_type"` to `wrangler.toml` compatibility flags or use a compatibility date before `2026-03-17`.
+- Cloudflare runs do not use the same CDP assumptions as local Chrome, so some low-level browser behaviors are intentionally disabled or handled differently.
+- The provider closes the browser for you, but you should still `await stagehand.close()` in a `finally` block when possible.
+
 <div align="center" style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 0;">
   <b>Vibe code</b>
   <span style="font-size: 1.05em;"> Stagehand with </span>
