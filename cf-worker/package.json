@@ -1,5 +1,5 @@
 {
-	"name": "@browserbasehq/stagehand-cf-test",
+	"name": "cloudflare-stagehand-test-worker",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",

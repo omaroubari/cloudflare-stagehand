@@ -137,7 +137,7 @@ function App() {
   return (
     <>
       <header id="header">
-        <h1>Stagehand Test UI</h1>
+        <h1>Stagehand Test CF Worker</h1>
       </header>
 
       <section id="controls">
