@@ -1,6 +1,6 @@
 {
-  "name": "@browserbasehq/stagehand",
-  "version": "2.5.8",
+  "name": "cloudflare-stagehand",
+  "version": "2.5.8-cf.0",
   "description": "An AI web browsing framework focused on simplicity and extensibility.",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -109,12 +109,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/browserbase/stagehand.git"
+    "url": "git+https://github.com/omaroubari/stagehand.git"
   },
   "bugs": {
-    "url": "https://github.com/browserbase/stagehand/issues"
+    "url": "https://github.com/omaroubari/stagehand/issues"
   },
-  "homepage": "https://stagehand.dev",
+  "homepage": "https://github.com/omaroubari/stagehand#readme",
   "overrides": {
     "whatwg-url": "^14.0.0"
   },
