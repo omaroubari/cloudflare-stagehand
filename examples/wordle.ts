@@ -1,4 +1,4 @@
-import { Stagehand } from "@browserbasehq/stagehand";
+import { Stagehand } from "cloudflare-stagehand";
 import StagehandConfig from "@/stagehand.config";
 
 async function example() {

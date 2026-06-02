@@ -12,7 +12,7 @@
  * Also check out the form_filling_sensible.ts example for a more complex example of using observe() to fill out a form.
  */
 
-import { ObserveResult, Stagehand } from "@browserbasehq/stagehand";
+import { ObserveResult, Stagehand } from "cloudflare-stagehand";
 import StagehandConfig from "../stagehand.config";
 
 async function example() {

@@ -135,7 +135,7 @@ importers:
         version: 0.0.64
       braintrust:
         specifier: ^0.0.171
-        version: 0.0.171(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10))(svelte@5.39.10)(vue@3.5.22(typescript@5.9.3))(zod@3.25.67)
+        version: 0.0.171(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10(@typescript-eslint/types@8.59.3)))(svelte@5.39.10(@typescript-eslint/types@8.59.3))(vue@3.5.22(typescript@5.9.3))(zod@3.25.67)
       chalk:
         specifier: ^5.4.1
         version: 5.6.2
@@ -168,7 +168,7 @@ importers:
         version: 1.3.0
       tsup:
         specifier: ^8.2.1
-        version: 8.5.0(jiti@1.21.7)(postcss@8.5.14)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+        version: 8.5.0(jiti@1.21.7)(postcss@8.5.15)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
       tsx:
         specifier: ^4.10.5
         version: 4.20.6
@@ -181,12 +181,12 @@ importers:
 
   cf-worker:
     dependencies:
-      '@browserbasehq/stagehand':
-        specifier: workspace:*
-        version: link:..
-      '@cloudflare/playwright':
+      'cloudflare-stagehand':
         specifier: ^1.3.0
         version: 1.3.0
+      cloudflare-stagehand:
+        specifier: workspace:*
+        version: link:..
       react:
         specifier: ^19.2.5
         version: 19.2.6
@@ -254,12 +254,12 @@ importers:
 
   evals:
     dependencies:
-      '@browserbasehq/stagehand':
-        specifier: workspace:*
-        version: link:..
       '@types/papaparse':
         specifier: ^5.3.16
         version: 5.3.16
+      cloudflare-stagehand:
+        specifier: workspace:*
+        version: link:..
       papaparse:
         specifier: ^5.5.3
         version: 5.5.3
@@ -273,7 +273,7 @@ importers:
 
   examples:
     dependencies:
-      '@browserbasehq/stagehand':
+      cloudflare-stagehand:
         specifier: workspace:*
         version: link:..
     devDependencies:
@@ -521,12 +521,20 @@ packages:
     resolution: {integrity: sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/helper-string-parser@7.29.7':
+    resolution: {integrity: sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/helper-validator-identifier@7.27.1':
     resolution: {integrity: sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-validator-identifier@7.28.5':
     resolution: {integrity: sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/helper-validator-identifier@7.29.7':
+    resolution: {integrity: sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-validator-option@7.27.1':
@@ -544,6 +552,11 @@ packages:
 
   '@babel/parser@7.29.3':
     resolution: {integrity: sha512-b3ctpQwp+PROvU/cttc4OYl4MzfJUWy6FZg+PMXfzmt/+39iHVF0sDfqay8TQM3JA2EUOyKcFZt75jWriQijsA==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  '@babel/parser@7.29.7':
+    resolution: {integrity: sha512-hnORnjP/1P/zFEndoeX+n+t1RwWRJiJpM/jO7FW32Kn9r5+sJB2JWOdYo4L6k78j15eCwY3Gm/7364B1EMwtNg==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -565,6 +578,10 @@ packages:
 
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/types@7.29.7':
+    resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
 
   '@braintrust/core@0.0.34':
@@ -647,7 +664,7 @@ packages:
     resolution: {integrity: sha512-jxQYkj8dSIzc0cD6cMMNdOc1UVjqSqu8BZdor5s8cGjW2I8BjODt/kWPVdY+u9zj3ms75Q5qaZgnxUad83+eAg==}
     engines: {node: '>=22.0.0'}
 
-  '@cloudflare/playwright@1.3.0':
+  'cloudflare-stagehand@1.3.0':
     resolution: {integrity: sha512-WOlpXzfJ7noXmW8qE/qlU7MbVHyt9IzxxwPcTGeh2+YQS1gqNIe3fl99AZvBsheH0o7oCePYtL9wRV1KPCYghQ==}
 
   '@cloudflare/unenv-preset@2.16.1':
@@ -1370,20 +1387,20 @@ packages:
     resolution: {integrity: sha512-rZAP3aVgB9ds9KOeUSL+zZ21hPmo8dh6fnIFwRQj5EAZl9gzR7wxYbYXYysAM8CTqGmUGyp2S4kUdV17MnGuWQ==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@floating-ui/core@1.7.3':
-    resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
+  '@floating-ui/core@1.7.5':
+    resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
 
-  '@floating-ui/dom@1.7.4':
-    resolution: {integrity: sha512-OOchDgh4F2CchOX94cRVqhvy7b3AFb+/rQXyswmzmGakRfkMgoWVjfnLWkRirfLEfuD4ysVW16eXzwt3jHIzKA==}
+  '@floating-ui/dom@1.7.6':
+    resolution: {integrity: sha512-9gZSAI5XM36880PPMm//9dfiEngYoC6Am2izES1FF406YFsjvyBMmeJ2g4SAju3xWwtuynNRFL2s9hgxpLI5SQ==}
 
-  '@floating-ui/react-dom@2.1.6':
-    resolution: {integrity: sha512-4JX6rEatQEvlmgU80wZyq9RT96HZJa88q8hp0pBd+LrczeDI4o6uA2M+uvxngVHo4Ihr8uibXxH6+70zhAFrVw==}
+  '@floating-ui/react-dom@2.1.8':
+    resolution: {integrity: sha512-cC52bHwM/n/CxS87FH0yWdngEZrjdtLW/qVruo68qg+prK7ZQ4YGdut2GyDVpoGeAYe/h899rVeOVm6Oi40k2A==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@floating-ui/utils@0.2.10':
-    resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
+  '@floating-ui/utils@0.2.11':
+    resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
   '@google/genai@1.22.0':
     resolution: {integrity: sha512-siETS3zTm3EGpTT4+BFc1z20xXBYfueD3gCYfxkOjuAKRk8lt8TJevDHi3zepn1oSI6NhG/LZvy0i+Q3qheObg==}
@@ -2502,8 +2519,8 @@ packages:
     resolution: {integrity: sha512-JZlVFE6/dYpP9tQmV0/ADfn32L9uFarHWxfcRhReKUnljz1ZiUM5zpX+PH8h5CJs6lao3TuFqnPm9IJJCEkE2w==}
     engines: {node: '>=10.8'}
 
-  '@sveltejs/acorn-typescript@1.0.6':
-    resolution: {integrity: sha512-4awhxtMh4cx9blePWl10HRHj8Iivtqj+2QdDCSMDzxG+XKa9+VCNupQuCuvzEhYPzZSrX+0gC+0lHA/0fFKKQQ==}
+  '@sveltejs/acorn-typescript@1.0.10':
+    resolution: {integrity: sha512-4WfKk68eTih+MiJD4fSbxN7E8kVBmTMPWHUPYjvl2N0rMs53YLTT8/YjKU5Dtnz5LqDjl7LEw4U7lXR2W3J5WA==}
     peerDependencies:
       acorn: ^8.9.0
 
@@ -2549,6 +2566,9 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/estree@1.0.9':
+    resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
   '@types/express-serve-static-core@4.19.7':
     resolution: {integrity: sha512-FvPtiIf1LfhzsaIXhv/PHan/2FeQBbtBDtfX2QfvPxdUelMDEckK08SM6nqo1MIZY3RUlfA+HV8+hFUSio78qg==}
@@ -3910,8 +3930,13 @@ packages:
     resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
     engines: {node: '>=0.10'}
 
-  esrap@2.1.0:
-    resolution: {integrity: sha512-yzmPNpl7TBbMRC5Lj2JlJZNPml0tzqoqP5B1JXycNUwtqma9AKCO0M2wHrdgsHcy1WRW7S9rJknAMtByg3usgA==}
+  esrap@2.2.10:
+    resolution: {integrity: sha512-HUTyxhhAQBl1hhsyLlHD1sh9xF6o6vaejzLxK5sge+LzrdEflQPQaNhC+n98d+OVB8v3LCCF+y80x/4bACjjJw==}
+    peerDependencies:
+      '@typescript-eslint/types': ^8.2.0
+    peerDependenciesMeta:
+      '@typescript-eslint/types':
+        optional: true
 
   esrecurse@4.3.0:
     resolution: {integrity: sha512-KmfKL3b6G+RXvP8N1vr3Tq1kL/oCFgn2NYXEtqP8/L3pKapUA4G8cFVaoF3SU323CD4XypR/ffioHmkti6/Tag==}
@@ -5004,6 +5029,9 @@ packages:
   magic-string@0.30.19:
     resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}
 
+  magic-string@0.30.21:
+    resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
   markdown-extensions@2.0.0:
     resolution: {integrity: sha512-o5vL7aDWatOTX8LzaS1WMoaoxIiLRQJuIKKe2wAw6IeULDHaqbiqiggmx+pKvZDb1Sj+pE46Sn1T7lCqfFtg1Q==}
     engines: {node: '>=16'}
@@ -5349,6 +5377,11 @@ packages:
 
   nanoid@3.3.11:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  nanoid@3.3.12:
+    resolution: {integrity: sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -5774,6 +5807,10 @@ packages:
     resolution: {integrity: sha512-SoSL4+OSEtR99LHFZQiJLkT59C5B1amGO1NzTwj7TT1qCUgUO6hxOvzkOYxD+vMrXBM3XJIKzokoERdqQq/Zmg==}
     engines: {node: ^10 || ^12 || >=14}
 
+  postcss@8.5.15:
+    resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
+    engines: {node: ^10 || ^12 || >=14}
+
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -5891,8 +5928,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-remove-scroll@2.7.1:
-    resolution: {integrity: sha512-HpMh8+oahmIdOuS5aFKKY6Pyog+FNaZV/XyJOq7b4YFwsFHe5yYfdbIalI4k3vU2nSDql7YskmUseHsRrJqIPA==}
+  react-remove-scroll@2.7.2:
+    resolution: {integrity: sha512-Iqb9NjCCTt6Hf+vOdNIZGdTiH1QSqr27H/Ek9sv/a97gfueI/5h1s3yRi1nngzMUaOOToin5dI1dXKdXiF+u0Q==}
     engines: {node: '>=10'}
     peerDependencies:
       '@types/react': '*'
@@ -7230,13 +7267,13 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  '@ai-sdk/svelte@0.0.57(svelte@5.39.10)(zod@3.25.67)':
+  '@ai-sdk/svelte@0.0.57(svelte@5.39.10(@typescript-eslint/types@8.59.3))(zod@3.25.67)':
     dependencies:
       '@ai-sdk/provider-utils': 1.0.22(zod@3.25.67)
       '@ai-sdk/ui-utils': 0.0.50(zod@3.25.67)
-      sswr: 2.2.0(svelte@5.39.10)
+      sswr: 2.2.0(svelte@5.39.10(@typescript-eslint/types@8.59.3))
     optionalDependencies:
-      svelte: 5.39.10
+      svelte: 5.39.10(@typescript-eslint/types@8.59.3)
     transitivePeerDependencies:
       - zod
 
@@ -7411,9 +7448,13 @@ snapshots:
 
   '@babel/helper-string-parser@7.27.1': {}
 
+  '@babel/helper-string-parser@7.29.7': {}
+
   '@babel/helper-validator-identifier@7.27.1': {}
 
   '@babel/helper-validator-identifier@7.28.5': {}
+
+  '@babel/helper-validator-identifier@7.29.7': {}
 
   '@babel/helper-validator-option@7.27.1': {}
 
@@ -7429,6 +7470,10 @@ snapshots:
   '@babel/parser@7.29.3':
     dependencies:
       '@babel/types': 7.29.0
+
+  '@babel/parser@7.29.7':
+    dependencies:
+      '@babel/types': 7.29.7
 
   '@babel/runtime@7.28.4': {}
 
@@ -7459,6 +7504,11 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@babel/types@7.29.7':
+    dependencies:
+      '@babel/helper-string-parser': 7.29.7
+      '@babel/helper-validator-identifier': 7.29.7
 
   '@braintrust/core@0.0.34':
     dependencies:
@@ -7649,7 +7699,7 @@ snapshots:
 
   '@cloudflare/kv-asset-handler@0.5.0': {}
 
-  '@cloudflare/playwright@1.3.0': {}
+  'cloudflare-stagehand@1.3.0': {}
 
   '@cloudflare/unenv-preset@2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260515.1)':
     dependencies:
@@ -8086,22 +8136,22 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@floating-ui/core@1.7.3':
+  '@floating-ui/core@1.7.5':
     dependencies:
-      '@floating-ui/utils': 0.2.10
+      '@floating-ui/utils': 0.2.11
 
-  '@floating-ui/dom@1.7.4':
+  '@floating-ui/dom@1.7.6':
     dependencies:
-      '@floating-ui/core': 1.7.3
-      '@floating-ui/utils': 0.2.10
+      '@floating-ui/core': 1.7.5
+      '@floating-ui/utils': 0.2.11
 
-  '@floating-ui/react-dom@2.1.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+  '@floating-ui/react-dom@2.1.8(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
-      '@floating-ui/dom': 1.7.4
+      '@floating-ui/dom': 1.7.6
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
 
-  '@floating-ui/utils@0.2.10': {}
+  '@floating-ui/utils@0.2.11': {}
 
   '@google/genai@1.22.0(@modelcontextprotocol/sdk@1.19.1)':
     dependencies:
@@ -9015,14 +9065,14 @@ snapshots:
       aria-hidden: 1.2.6
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
-      react-remove-scroll: 2.7.1(@types/react@19.2.14)(react@19.2.6)
+      react-remove-scroll: 2.7.2(@types/react@19.2.14)(react@19.2.6)
     optionalDependencies:
       '@types/react': 19.2.14
       '@types/react-dom': 19.2.3(@types/react@19.2.14)
 
   '@radix-ui/react-popper@1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
-      '@floating-ui/react-dom': 2.1.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@floating-ui/react-dom': 2.1.8(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-arrow': 1.1.7(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.2.14)(react@19.2.6)
       '@radix-ui/react-context': 1.1.2(@types/react@19.2.14)(react@19.2.6)
@@ -9448,7 +9498,7 @@ snapshots:
       '@stoplight/yaml-ast-parser': 0.0.50
       tslib: 2.8.1
 
-  '@sveltejs/acorn-typescript@1.0.6(acorn@8.16.0)':
+  '@sveltejs/acorn-typescript@1.0.10(acorn@8.16.0)':
     dependencies:
       acorn: 8.16.0
 
@@ -9501,6 +9551,8 @@ snapshots:
       '@types/estree': 1.0.8
 
   '@types/estree@1.0.8': {}
+
+  '@types/estree@1.0.9': {}
 
   '@types/express-serve-static-core@4.19.7':
     dependencies:
@@ -9813,7 +9865,7 @@ snapshots:
 
   '@vue/compiler-core@3.5.22':
     dependencies:
-      '@babel/parser': 7.29.3
+      '@babel/parser': 7.29.7
       '@vue/shared': 3.5.22
       entities: 4.5.0
       estree-walker: 2.0.2
@@ -9826,14 +9878,14 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.22':
     dependencies:
-      '@babel/parser': 7.29.3
+      '@babel/parser': 7.29.7
       '@vue/compiler-core': 3.5.22
       '@vue/compiler-dom': 3.5.22
       '@vue/compiler-ssr': 3.5.22
       '@vue/shared': 3.5.22
       estree-walker: 2.0.2
-      magic-string: 0.30.19
-      postcss: 8.5.14
+      magic-string: 0.30.21
+      postcss: 8.5.15
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.5.22':
@@ -9906,13 +9958,13 @@ snapshots:
       clean-stack: 4.2.0
       indent-string: 5.0.0
 
-  ai@3.4.33(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10))(svelte@5.39.10)(vue@3.5.22(typescript@5.9.3))(zod@3.25.67):
+  ai@3.4.33(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10(@typescript-eslint/types@8.59.3)))(svelte@5.39.10(@typescript-eslint/types@8.59.3))(vue@3.5.22(typescript@5.9.3))(zod@3.25.67):
     dependencies:
       '@ai-sdk/provider': 0.0.26
       '@ai-sdk/provider-utils': 1.0.22(zod@3.25.67)
       '@ai-sdk/react': 0.0.70(react@19.2.6)(zod@3.25.67)
       '@ai-sdk/solid': 0.0.54(zod@3.25.67)
-      '@ai-sdk/svelte': 0.0.57(svelte@5.39.10)(zod@3.25.67)
+      '@ai-sdk/svelte': 0.0.57(svelte@5.39.10(@typescript-eslint/types@8.59.3))(zod@3.25.67)
       '@ai-sdk/ui-utils': 0.0.50(zod@3.25.67)
       '@ai-sdk/vue': 0.0.59(vue@3.5.22(typescript@5.9.3))(zod@3.25.67)
       '@opentelemetry/api': 1.9.0
@@ -9924,8 +9976,8 @@ snapshots:
     optionalDependencies:
       openai: 4.104.0(ws@8.18.3)(zod@3.25.67)
       react: 19.2.6
-      sswr: 2.2.0(svelte@5.39.10)
-      svelte: 5.39.10
+      sswr: 2.2.0(svelte@5.39.10(@typescript-eslint/types@8.59.3))
+      svelte: 5.39.10(@typescript-eslint/types@8.59.3)
       zod: 3.25.67
     transitivePeerDependencies:
       - solid-js
@@ -10210,13 +10262,13 @@ snapshots:
     dependencies:
       fill-range: 7.1.1
 
-  braintrust@0.0.171(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10))(svelte@5.39.10)(vue@3.5.22(typescript@5.9.3))(zod@3.25.67):
+  braintrust@0.0.171(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10(@typescript-eslint/types@8.59.3)))(svelte@5.39.10(@typescript-eslint/types@8.59.3))(vue@3.5.22(typescript@5.9.3))(zod@3.25.67):
     dependencies:
       '@ai-sdk/provider': 0.0.11
       '@braintrust/core': 0.0.67
       '@next/env': 14.2.33
       '@vercel/functions': 1.6.0
-      ai: 3.4.33(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10))(svelte@5.39.10)(vue@3.5.22(typescript@5.9.3))(zod@3.25.67)
+      ai: 3.4.33(openai@4.104.0(ws@8.18.3)(zod@3.25.67))(react@19.2.6)(sswr@2.2.0(svelte@5.39.10(@typescript-eslint/types@8.59.3)))(svelte@5.39.10(@typescript-eslint/types@8.59.3))(vue@3.5.22(typescript@5.9.3))(zod@3.25.67)
       argparse: 2.0.1
       chalk: 4.1.2
       cli-progress: 3.12.0
@@ -11153,9 +11205,11 @@ snapshots:
     dependencies:
       estraverse: 5.3.0
 
-  esrap@2.1.0:
+  esrap@2.2.10(@typescript-eslint/types@8.59.3):
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+    optionalDependencies:
+      '@typescript-eslint/types': 8.59.3
 
   esrecurse@4.3.0:
     dependencies:
@@ -12135,7 +12189,7 @@ snapshots:
 
   is-reference@3.0.3:
     dependencies:
-      '@types/estree': 1.0.8
+      '@types/estree': 1.0.9
 
   is-regex@1.2.1:
     dependencies:
@@ -12424,6 +12478,10 @@ snapshots:
   lru-cache@7.18.3: {}
 
   magic-string@0.30.19:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
+
+  magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
@@ -13077,6 +13135,8 @@ snapshots:
 
   nanoid@3.3.11: {}
 
+  nanoid@3.3.12: {}
+
   natural-compare@1.4.0: {}
 
   negotiator@0.6.3: {}
@@ -13497,12 +13557,12 @@ snapshots:
       camelcase-css: 2.0.1
       postcss: 8.5.6
 
-  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.14)(tsx@4.20.6)(yaml@2.8.1):
+  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
       jiti: 1.21.7
-      postcss: 8.5.14
+      postcss: 8.5.15
       tsx: 4.20.6
       yaml: 2.8.1
 
@@ -13530,6 +13590,12 @@ snapshots:
   postcss@8.5.14:
     dependencies:
       nanoid: 3.3.11
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
+
+  postcss@8.5.15:
+    dependencies:
+      nanoid: 3.3.12
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -13664,7 +13730,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.14
 
-  react-remove-scroll@2.7.1(@types/react@19.2.14)(react@19.2.6):
+  react-remove-scroll@2.7.2(@types/react@19.2.14)(react@19.2.6):
     dependencies:
       react: 19.2.6
       react-remove-scroll-bar: 2.3.8(@types/react@19.2.14)(react@19.2.6)
@@ -14362,9 +14428,9 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
-  sswr@2.2.0(svelte@5.39.10):
+  sswr@2.2.0(svelte@5.39.10(@typescript-eslint/types@8.59.3)):
     dependencies:
-      svelte: 5.39.10
+      svelte: 5.39.10(@typescript-eslint/types@8.59.3)
       swrev: 4.0.0
 
   stack-utils@2.0.6:
@@ -14484,22 +14550,24 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  svelte@5.39.10:
+  svelte@5.39.10(@typescript-eslint/types@8.59.3):
     dependencies:
       '@jridgewell/remapping': 2.3.5
       '@jridgewell/sourcemap-codec': 1.5.5
-      '@sveltejs/acorn-typescript': 1.0.6(acorn@8.16.0)
-      '@types/estree': 1.0.8
+      '@sveltejs/acorn-typescript': 1.0.10(acorn@8.16.0)
+      '@types/estree': 1.0.9
       acorn: 8.16.0
       aria-query: 5.3.2
       axobject-query: 4.1.0
       clsx: 2.1.1
       esm-env: 1.2.2
-      esrap: 2.1.0
+      esrap: 2.2.10(@typescript-eslint/types@8.59.3)
       is-reference: 3.0.3
       locate-character: 3.0.0
-      magic-string: 0.30.19
+      magic-string: 0.30.21
       zimmerframe: 1.1.4
+    transitivePeerDependencies:
+      - '@typescript-eslint/types'
 
   swr@2.3.6(react@19.2.6):
     dependencies:
@@ -14651,7 +14719,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.0(jiti@1.21.7)(postcss@8.5.14)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1):
+  tsup@8.5.0(jiti@1.21.7)(postcss@8.5.15)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.25.10)
       cac: 6.7.14
@@ -14662,7 +14730,7 @@ snapshots:
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.14)(tsx@4.20.6)(yaml@2.8.1)
+      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.20.6)(yaml@2.8.1)
       resolve-from: 5.0.0
       rollup: 4.52.4
       source-map: 0.8.0-beta.0
@@ -14671,7 +14739,7 @@ snapshots:
       tinyglobby: 0.2.15
       tree-kill: 1.2.2
     optionalDependencies:
-      postcss: 8.5.14
+      postcss: 8.5.15
       typescript: 5.9.3
     transitivePeerDependencies:
       - jiti

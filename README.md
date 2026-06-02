@@ -39,9 +39,9 @@ If you're looking for the Python implementation, you can find it
 
 ## Cloudflare Browser Run Fork
 
-This fork of [Browserbase Stagehand](https://github.com/browserbase/stagehand) adds first-class support for [Cloudflare Browser Run](https://developers.cloudflare.com/browser-rendering/) through [`@cloudflare/playwright`](https://www.npmjs.com/package/@cloudflare/playwright). It keeps the Stagehand API surface intact while allowing a Worker to initialize Stagehand with `env: "CLOUDFLARE"` and a Cloudflare browser binding.
+This fork of [Browserbase Stagehand](https://github.com/browserbase/stagehand) adds first-class support for [Cloudflare Browser Run](https://developers.cloudflare.com/browser-rendering/) through [`cloudflare-stagehand`](https://www.npmjs.com/package/cloudflare-stagehand). It keeps the Stagehand API surface intact while allowing a Worker to initialize Stagehand with `env: "CLOUDFLARE"` and a Cloudflare browser binding.
 
-The Cloudflare support was added by introducing a browser provider seam for local Playwright, Browserbase, and Cloudflare Browser Run. The Cloudflare provider launches with `@cloudflare/playwright` using the Worker `BROWSER` binding, returns a Playwright context to Stagehand, and owns Cloudflare-specific browser cleanup.
+The Cloudflare support was added by introducing a browser provider seam for local Playwright, Browserbase, and Cloudflare Browser Run. The Cloudflare provider launches with `cloudflare-stagehand` using the Worker `BROWSER` binding, returns a Playwright context to Stagehand, and owns Cloudflare-specific browser cleanup.
 
 Several Stagehand internals also needed Cloudflare-specific paths because Cloudflare managed browser sessions are less tolerant of raw CDP setup than local Chrome or Browserbase sessions. This fork avoids CDP-only initialization such as `Page.enable`, frame-tree lookup, frame navigation listeners, and `Browser.setDownloadBehavior` when running in Cloudflare. DOM settling falls back to Playwright load state, and observe/extract use a Playwright-driven accessibility snapshot rather than CDP accessibility calls.
 
@@ -49,10 +49,10 @@ Actions were adjusted for Cloudflare as well. Link actions can navigate directly
 
 ## Using Cloudflare Browser Run
 
-In a Cloudflare Worker, create a `CloudflareBrowserProvider` with the Worker `BROWSER` binding and the `launch` function from `@cloudflare/playwright`.
+In a Cloudflare Worker, create a `CloudflareBrowserProvider` with the Worker `BROWSER` binding and the `launch` function from `cloudflare-stagehand`.
 
 ```ts
-import { launch } from "@cloudflare/playwright";
+import { launch } from "cloudflare-stagehand";
 import { CloudflareBrowserProvider, Stagehand } from "cloudflare-stagehand";
 
 export default {

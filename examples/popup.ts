@@ -4,7 +4,7 @@
  * It also shows how to wait for something to happen on a page before continuing.
  */
 
-import { ObserveResult, Stagehand } from "@browserbasehq/stagehand";
+import { ObserveResult, Stagehand } from "cloudflare-stagehand";
 import StagehandConfig from "@/stagehand.config";
 
 async function example() {
