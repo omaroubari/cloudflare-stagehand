@@ -2,7 +2,7 @@ import {
   Stagehand,
   LLMClient,
   type CreateChatCompletionOptions,
-} from "@browserbasehq/stagehand";
+} from "cloudflare-stagehand";
 import express from "express";
 import http from "http";
 import type { BrowserContext, Page } from "playwright";

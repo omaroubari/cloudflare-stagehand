@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import StagehandConfig from "@/evals/deterministic/stagehand.config";
-import { Stagehand } from "@browserbasehq/stagehand";
+import { Stagehand } from "cloudflare-stagehand";
 import { promises as fs } from "fs";
 import path from "path";
 

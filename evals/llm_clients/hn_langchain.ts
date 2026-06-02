@@ -2,7 +2,7 @@ import { EvalFunction } from "@/types/evals";
 import { z } from "zod/v3";
 import { LangchainClient } from "@/examples/external_clients/langchain";
 import { ChatOpenAI } from "@langchain/openai";
-import { Stagehand } from "@browserbasehq/stagehand";
+import { Stagehand } from "cloudflare-stagehand";
 
 export const hn_langchain: EvalFunction = async ({
   logger,
