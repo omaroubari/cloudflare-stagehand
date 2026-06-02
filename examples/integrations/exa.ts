@@ -1,4 +1,4 @@
-import { Stagehand } from "@browserbasehq/stagehand";
+import { Stagehand } from "cloudflare-stagehand";
 
 async function example(stagehand: Stagehand) {
   const page = stagehand.page;

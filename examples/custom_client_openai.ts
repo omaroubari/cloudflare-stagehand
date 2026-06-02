@@ -5,7 +5,7 @@
  *
  * You will need to reference the Custom OpenAI Client in /external_clients/customOpenAI.ts
  */
-import { Stagehand } from "@browserbasehq/stagehand";
+import { Stagehand } from "cloudflare-stagehand";
 import { z } from "zod/v3";
 import { CustomOpenAIClient } from "./external_clients/customOpenAI";
 import StagehandConfig from "@/stagehand.config";

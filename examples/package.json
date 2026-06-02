@@ -1,15 +1,15 @@
 {
-  "name": "@browserbasehq/stagehand-examples",
+  "name": "cloudflare-stagehand-examples",
   "version": "1.0.17",
   "private": true,
   "description": "Example scripts for Stagehand",
   "main": "./",
   "scripts": {
-    "build": "pnpm --filter @browserbasehq/stagehand run build",
+    "build": "pnpm --filter cloudflare-stagehand run build",
     "start": "pnpm run build && sh -c 'if [ -n \"$1\" ]; then tsx \"$1.ts\"; else tsx example.ts; fi' --"
   },
   "dependencies": {
-    "@browserbasehq/stagehand": "workspace:*"
+    "cloudflare-stagehand": "workspace:*",
   },
   "devDependencies": {
     "tsx": "^4.10.5",

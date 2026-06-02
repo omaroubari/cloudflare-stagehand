@@ -9,7 +9,7 @@ import {
   AvailableModel,
   CreateChatCompletionOptions,
   LLMClient,
-} from "@browserbasehq/stagehand";
+} from "cloudflare-stagehand";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import type {

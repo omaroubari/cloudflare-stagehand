@@ -31,7 +31,7 @@ import {
   EvalOutput,
 } from "@/types/evals";
 import { EvalLogger } from "./logger";
-import { AvailableModel, LLMClient } from "@browserbasehq/stagehand";
+import { AvailableModel, LLMClient } from "cloudflare-stagehand";
 import { env } from "./env";
 import dotenv from "dotenv";
 import { StagehandEvalError } from "@/types/stagehandErrors";

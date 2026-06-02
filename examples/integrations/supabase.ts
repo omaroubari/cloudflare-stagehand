@@ -1,5 +1,5 @@
 import StagehandConfig from "@/stagehand.config";
-import { connectToMCPServer, Stagehand } from "@browserbasehq/stagehand";
+import { connectToMCPServer, Stagehand } from "cloudflare-stagehand";
 
 async function example(stagehand: Stagehand) {
   const page = stagehand.page;

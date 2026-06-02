@@ -8,7 +8,7 @@
  *   and eval name or category.
  */
 import fs from "fs";
-import { LogLine } from "@browserbasehq/stagehand";
+import { LogLine } from "cloudflare-stagehand";
 import stringComparison from "string-comparison";
 import sharp from "sharp";
 const { jaroWinkler } = stringComparison;

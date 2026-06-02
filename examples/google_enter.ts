@@ -4,7 +4,7 @@
  * It's mainly meant to sanity check using page.act() to press enter, since some LLMs have issues with it.
  */
 
-import { Stagehand } from "@browserbasehq/stagehand";
+import { Stagehand } from "cloudflare-stagehand";
 import StagehandConfig from "@/stagehand.config";
 
 async function example() {

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { Page } from "@browserbasehq/stagehand";
+import type { Page } from "cloudflare-stagehand";
 import { z } from "zod/v3";
 import {
   type CloudflareFixtureServer,

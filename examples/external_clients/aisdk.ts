@@ -15,7 +15,7 @@ import {
   CreateChatCompletionOptions,
   LLMClient,
   AvailableModel,
-} from "@browserbasehq/stagehand";
+} from "cloudflare-stagehand";
 import { ChatCompletion } from "openai/resources";
 import { LogLine } from "@/types/log";
 import { LLMCache } from "@/lib/cache/LLMCache";

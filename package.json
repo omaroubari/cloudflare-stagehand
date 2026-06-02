@@ -12,13 +12,13 @@
     "evals": "dist/evals/cli.js"
   },
   "scripts": {
-    "example": "pnpm --filter @browserbasehq/stagehand-examples run start",
+    "example": "pnpm --filter cloudflare-stagehand-examples run start",
     "format": "prettier --write .",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier --write .",
     "eslint": "eslint .",
     "cache:clear": "rm -rf .cache",
-    "docs": "pnpm --filter @browserbasehq/stagehand-docs run dev",
+    "docs": "pnpm --filter cloudflare-stagehand-docs run dev",
     "evals": "tsx scripts/run-evals.ts",
     "evals:legacy": "tsx scripts/run-evals.ts",
     "e2e": "pnpm run build && cd evals/deterministic && playwright test --config=e2e.playwright.config.ts",
