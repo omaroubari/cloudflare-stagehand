@@ -1,4 +1,7 @@
-import type { Browser, BrowserContext } from "./page";
+import type {
+  Browser as Browser,
+  BrowserContext as BrowserContext,
+} from "./page";
 import type { Page as PlaywrightPage } from "playwright";
 
 export type StagehandEnv = "LOCAL" | "BROWSERBASE" | "CLOUDFLARE";
