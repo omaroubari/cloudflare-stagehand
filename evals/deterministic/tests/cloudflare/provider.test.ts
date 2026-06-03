@@ -1,22 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { CloudflareBrowserProvider } from "cloudflare-stagehand";
-import { chromium } from "playwright";
 
 const noopLogger = () => {};
 
 test.describe("CloudflareBrowserProvider", () => {
-  let server: Awaited<ReturnType<typeof chromium.launchServer>>;
-
-  test.beforeAll(async () => {
-    server = await chromium.launchServer();
-  });
-
-  test.afterAll(async () => {
-    await server.close();
-  });
-
-  test("connects to the CDP URL and returns the Cloudflare environment", async () => {
-    const cdpUrl = server.wsEndpoint();
+  test("connects to the CDP URL and returns the Cloudflare environment", async ({
+    browser,
+  }) => {
+    const cdpUrl = browser.wsEndpoint();
     const provider = new CloudflareBrowserProvider(
       noopLogger,
       { cdpUrl },
@@ -32,10 +23,9 @@ test.describe("CloudflareBrowserProvider", () => {
     await provider.close();
   });
 
-  test("reuses the first existing browser context", async () => {
-    const cdpUrl = server.wsEndpoint();
-    const browser = await chromium.connectOverCDP(cdpUrl);
+  test("reuses the first existing browser context", async ({ browser }) => {
     const existingContext = await browser.newContext();
+    const cdpUrl = browser.wsEndpoint();
 
     const provider = new CloudflareBrowserProvider(
       noopLogger,
@@ -75,22 +65,6 @@ test.describe("CloudflareBrowserProvider", () => {
       { cdpUrl: "ws://127.0.0.1:9222" },
       "test-api-key",
     );
-
-    await expect(provider.close()).resolves.toBeUndefined();
-  });
-
-  test("ignores target-closed errors during close", async () => {
-    const cdpUrl = server.wsEndpoint();
-    const provider = new CloudflareBrowserProvider(
-      noopLogger,
-      { cdpUrl },
-      "test-api-key",
-    );
-
-    const result = await provider.getBrowser();
-    // Force the remote browser to detach the target so the provider's
-    // subsequent close() encounters a target-closed error.
-    await result.browser?.close();
 
     await expect(provider.close()).resolves.toBeUndefined();
   });

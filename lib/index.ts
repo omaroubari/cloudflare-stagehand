@@ -359,87 +359,90 @@ export class CloudflareBrowserProvider implements StagehandBrowserProvider {
   private browser?: Browser;
 
   constructor(
-    private logger: (message: LogLine) => void,
-    private cloudflareBrowserConnectOptions: ConstructorParams["cloudflareBrowserConnectOptions"],
-    private apiKey: string | undefined,
+    private browserBinding: unknown = typeof process !== "undefined"
+      ? process.env.BROWSER
+      : undefined,
+    private launchBrowser?: (
+      binding: unknown,
+      options?: unknown,
+    ) => Promise<unknown>,
   ) {}
 
   async getBrowser(): Promise<BrowserResult> {
-    const { logger, cloudflareBrowserConnectOptions, apiKey } = this;
-    if (!apiKey) {
-      throw new MissingEnvironmentVariableError(
-        "CLOUDFLARE_API_TOKEN",
-        "Cloudflare",
-      );
+    if (!this.browserBinding) {
+      throw new MissingEnvironmentVariableError("BROWSER", "Cloudflare");
     }
-    if (!cloudflareBrowserConnectOptions.cdpUrl) {
+
+    const launchBrowser = this.launchBrowser;
+    if (!launchBrowser) {
       throw new StagehandError(
-        "CloudflareBrowserProvider requires the cdpUrl.",
+        "CloudflareBrowserProvider requires the @cloudflare/playwright launch function.",
       );
     }
-    logger({
-      category: "init",
-      message: "connecting to cloudflare browser...",
-      level: 1,
-    });
-    let browser: Browser;
+
     try {
-      browser = await chromium.connectOverCDP(
-        cloudflareBrowserConnectOptions.cdpUrl,
-        {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
-        },
-      );
+      const browser = (await launchBrowser(this.browserBinding, {
+        // LLM-backed observe/act can exceed Cloudflare's short default idle
+        // window. This does not guarantee the page survives every operation, but
+        // it reduces target closures while inference is running.
+        keep_alive: 600_000,
+      })) as Browser;
+      const context = await browser.newContext();
+      this.browser = browser;
+      return { browser, context, env: "CLOUDFLARE" };
     } catch (error) {
-      logger({
-        category: "init",
-        message: "failed to connect to cloudflare browser",
-        level: 0,
-        auxiliary: {
-          cdpUrl: {
-            value: cloudflareBrowserConnectOptions.cdpUrl,
-            type: "string",
-          },
-          error: {
-            value: error.message,
-            type: "string",
-          },
-          trace: {
-            value: error.stack,
-            type: "string",
-          },
-        },
-      });
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        message.includes("Cannot read properties of null (reading 'accept')")
+      ) {
+        throw new StagehandError(
+          "Failed to initialize Stagehand with the Cloudflare browser binding. " +
+            'Add "no_websocket_standard_binary_type" to your wrangler compatibility_flags or use a compatibility_date before 2026-03-17. ' +
+            `Original error: ${message}`,
+        );
+      }
+
       throw error;
     }
-    const context = browser.contexts()[0] ?? (await browser.newContext());
-    this.browser = browser;
-    return { browser, context, env: "CLOUDFLARE" };
   }
 
   async close(): Promise<void> {
-    if (!this.browser) {
-      return;
-    }
-    this.logger({
-      category: "close",
-      message: "disconnecting from cloudflare browser...",
-      level: 1,
-    });
+    if (!this.browser) return;
     try {
-      // Disconnects the CDP connection without closing the remote browser,
-      // and intentionally does not clear the context.
       await this.browser.close();
     } catch (error) {
-      // Cloudflare-managed browser sessions can close the target between
-      // the operation completing and us calling close(). Swallow that
-      // specifically so stagehand.close() doesn't mask the operation result.
       if (!isTargetGoneError(error)) throw error;
     }
-    this.browser = undefined;
   }
+}
+
+function defaultBrowserProviderForEnv(
+  apiKey: string | undefined,
+  projectId: string | undefined,
+  env: StagehandEnv = "LOCAL",
+  headless: boolean = false,
+  logger: (message: LogLine) => void,
+  browserbaseSessionCreateParams?: ConstructorParams["browserbaseSessionCreateParams"],
+  browserbaseSessionID?: string,
+  localBrowserLaunchOptions?: LocalBrowserLaunchOptions,
+): StagehandBrowserProvider {
+  if (env === "BROWSERBASE") {
+    return new BrowserbaseProvider(
+      apiKey,
+      projectId,
+      logger,
+      browserbaseSessionCreateParams,
+      browserbaseSessionID,
+    );
+  }
+  if (env === "CLOUDFLARE") {
+    return new CloudflareBrowserProvider();
+  }
+  return new LocalPlaywrightProvider(
+    logger,
+    headless,
+    localBrowserLaunchOptions,
+  );
 }
 
 async function applyStealthScripts(context: BrowserContext) {
@@ -502,7 +505,6 @@ export class Stagehand {
   public apiClient: StagehandAPI | undefined;
   public readonly waitForCaptchaSolves: boolean;
   private localBrowserLaunchOptions?: LocalBrowserLaunchOptions;
-  private cloudflareBrowserConnectOptions?: ConstructorParams["cloudflareBrowserConnectOptions"];
   public readonly selfHeal: boolean;
   private cleanupCalled = false;
   public readonly actTimeoutMs: number;
@@ -645,7 +647,6 @@ export class Stagehand {
       systemPrompt,
       useAPI = true,
       localBrowserLaunchOptions,
-      cloudflareBrowserConnectOptions,
       browserProvider,
       waitForCaptchaSolves = false,
       logInferenceToFile = false,
@@ -779,7 +780,6 @@ export class Stagehand {
     }
     this.waitForCaptchaSolves = waitForCaptchaSolves;
     this.localBrowserLaunchOptions = localBrowserLaunchOptions;
-    this.cloudflareBrowserConnectOptions = cloudflareBrowserConnectOptions;
     this.browserProvider =
       typeof browserProvider === "function"
         ? { getBrowser: browserProvider }
@@ -899,25 +899,16 @@ export class Stagehand {
 
     const browserProvider =
       this.browserProvider ??
-      (this._env === "BROWSERBASE"
-        ? new BrowserbaseProvider(
-            this.apiKey,
-            this.projectId,
-            this.logger,
-            this.browserbaseSessionCreateParams,
-            this.browserbaseSessionID,
-          )
-        : this._env === "CLOUDFLARE"
-          ? new CloudflareBrowserProvider(
-              this.logger,
-              this.cloudflareBrowserConnectOptions,
-              this.apiKey,
-            )
-          : new LocalPlaywrightProvider(
-              this.logger,
-              this.headless,
-              this.localBrowserLaunchOptions,
-            ));
+      defaultBrowserProviderForEnv(
+        this.apiKey,
+        this.projectId,
+        this.env,
+        this.headless,
+        this.logger,
+        this.browserbaseSessionCreateParams,
+        this.browserbaseSessionID,
+        this.localBrowserLaunchOptions,
+      );
     this.browserProvider = browserProvider;
 
     const {
@@ -929,7 +920,10 @@ export class Stagehand {
       contextPath,
       sessionId,
       env,
-    } = await browserProvider.getBrowser();
+    } = await browserProvider.getBrowser().catch((e) => {
+      this.stagehandLogger.error("Error in init:", { error: String(e) });
+      throw e;
+    });
     this._env = env ?? this._env;
     this.contextPath = contextPath;
     this._browser = browser;
@@ -1022,9 +1016,9 @@ export class Stagehand {
         await this.browserProvider.close();
       } else {
         await this.context.close();
-        if (this._browser) {
-          await this._browser.close();
-        }
+      }
+      if (this._browser && !this.browserProvider?.close) {
+        await this._browser.close();
       }
     }
 
