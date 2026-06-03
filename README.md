@@ -81,7 +81,6 @@ Gotchas:
 - Pass `env: "CLOUDFLARE"`; Stagehand uses that to skip Browserbase and local-browser paths.
 - `browserProvider` must receive the Cloudflare `BROWSER` binding plus the `launch` function. Without both, initialization fails.
 - Set `keep_alive` is handled for you by the provider, but Cloudflare browser sessions can still close mid-action on long runs. Keep actions tight and prefer shorter workflows.
-- If you see `Cannot read properties of null (reading 'accept')`, add `"no_websocket_standard_binary_type"` to `wrangler.toml` compatibility flags or use a compatibility date before `2026-03-17`.
 - Cloudflare runs do not use the same CDP assumptions as local Chrome, so some low-level browser behaviors are intentionally disabled or handled differently.
 - The provider closes the browser for you, but you should still `await stagehand.close()` in a `finally` block when possible.
 
