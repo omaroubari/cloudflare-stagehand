@@ -1,5 +1,5 @@
-import { launch } from "@cloudflare/playwright";
-import { CloudflareBrowserProvider, Stagehand } from "../../lib/index";
+import { endpointURLString } from "@cloudflare/playwright";
+import { Stagehand } from "../../lib/index";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -51,15 +51,20 @@ async function withStagehand(
   fn: (stagehand: Stagehand) => Promise<Response>,
 ): Promise<Response> {
   const modelName = (body.modelName as string) || "google/gemini-3-flash";
+  const cdpUrl = endpointURLString(env.BROWSER);
 
   const stagehand = new Stagehand({
     env: "CLOUDFLARE",
-    browserProvider: new CloudflareBrowserProvider(env.BROWSER, launch),
     modelName,
     modelClientOptions: {
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
     },
+    apiKey: process.env.CLOUDFLARE_API_TOKEN,
+    cloudflareBrowserConnectOptions: {
+      cdpUrl,
+    },
     verbose: 2,
+    logger: console.log,
     disablePino: true,
     enableCaching: false,
   });

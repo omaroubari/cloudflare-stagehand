@@ -106,6 +106,12 @@ export interface ConstructorParams {
    */
   localBrowserLaunchOptions?: LocalBrowserLaunchOptions;
   /**
+   * The parameters to use for connecting to a cloudflare browser
+   */
+  cloudflareBrowserConnectOptions?: {
+    cdpUrl: string;
+  };
+  /**
    * Log the inference to a file
    */
   logInferenceToFile?: boolean;
